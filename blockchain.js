@@ -1,6 +1,27 @@
 /* global window, ethers */
+
 (function () {
   const cfg = window.AppConfig || window.config || {};
+
+  // --- Config Validation ---
+  function validateConfig() {
+    const required = [
+      'GANACHE_URL', 'CONTRACT_ADDRESS', 'CONTRACT_ABI', 'DEV_PRIVATE_KEY',
+      'PINATA_GATEWAY', 'PINATA_UPLOAD_URL', 'PINATA_JWT'
+    ];
+    for (const key of required) {
+      if (!cfg[key]) {
+        console.error(`Config error: Missing ${key} in config.js`);
+        throw new Error(`Missing required config: ${key}`);
+      }
+    }
+    if (!Array.isArray(cfg.CONTRACT_ABI)) {
+      throw new Error('CONTRACT_ABI must be an array');
+    }
+    if (typeof BigInt !== 'function') {
+      throw new Error('BigInt is not supported in this environment.');
+    }
+  }
 
   const Blockchain = {
     provider: null,
@@ -15,6 +36,7 @@
       if (this.provider && this.signer && this.contractRO && this.contractRW) {
         return true;
       }
+      validateConfig();
       // Use Ganache RPC directly with provided private key
       this.provider = new ethers.JsonRpcProvider(cfg.GANACHE_URL);
       // Use the provided private key for signing
@@ -27,6 +49,10 @@
       this.contractRO = new ethers.Contract(cfg.CONTRACT_ADDRESS, cfg.CONTRACT_ABI, this.provider);
       // Read-write contract with signer
       this.contractRW = this.contractRO.connect(this.signer);
+      // ABI sanity check
+      if (!this.contractRO.interface) {
+        console.warn('ABI/interface not found on contract. Check CONTRACT_ABI.');
+      }
       return true;
     },
 
@@ -74,15 +100,25 @@
 
     // Store IPFS hash mapping (for demo - in production, store in contract or database)
     storeIPFSMapping(photoHash, ipfsHash) {
-      const mappings = JSON.parse(localStorage.getItem('ipfs_mappings') || '{}');
-      mappings[photoHash] = ipfsHash;
-      localStorage.setItem('ipfs_mappings', JSON.stringify(mappings));
+      // Warning: localStorage is browser-specific and not persistent for production
+      try {
+        const mappings = JSON.parse(localStorage.getItem('ipfs_mappings') || '{}');
+        mappings[photoHash] = ipfsHash;
+        localStorage.setItem('ipfs_mappings', JSON.stringify(mappings));
+      } catch (e) {
+        console.warn('Failed to store IPFS mapping in localStorage:', e);
+      }
     },
 
     // Get original IPFS hash from bytes32 hash
     getOriginalIPFSHash(photoHash) {
-      const mappings = JSON.parse(localStorage.getItem('ipfs_mappings') || '{}');
-      return mappings[photoHash] || null;
+      try {
+        const mappings = JSON.parse(localStorage.getItem('ipfs_mappings') || '{}');
+        return mappings[photoHash] || null;
+      } catch (e) {
+        console.warn('Failed to read IPFS mapping from localStorage:', e);
+        return null;
+      }
     },
     // Parse farmLocation augmented string like: "Village A ::FARMER=Ramesh ::IPFS=Qm..."
     parseFarmLocationMeta(farmLocationStr) {
@@ -114,14 +150,14 @@
         if (meta.ipfs) {
           return this.getImageFromPinata(meta.ipfs);
         }
-      } catch { }
+      } catch (e) { console.warn('parseFarmLocationMeta error:', e); }
       // fallback: use stored mapping from photoHash -> ipfs hash if available
       try {
         if (args.photoHash) {
           const original = this.getOriginalIPFSHash(args.photoHash);
           if (original) return this.getImageFromPinata(original);
         }
-      } catch { }
+      } catch (e) { console.warn('imageUrlFromArgs fallback error:', e); }
       return null;
     },
 
@@ -133,9 +169,15 @@
         : ethers.id(`${batchId}:${Date.now()}`); // placeholder bytes32
 
       // Try to attach user name/username from Supabase session and use V2
-      const session = (await (window.getCurrentUser ? window.getCurrentUser() : Promise.resolve(null))) || null;
+
+      let session = null;
+      if (typeof window.getCurrentUser === 'function') {
+        session = await window.getCurrentUser();
+      } else {
+        console.warn('window.getCurrentUser is not defined. Farmer name/username may be missing.');
+      }
       const farmerName = session?.name || session?.actorId || '';
-      const farmerUsername = session?.actorId || ''; // Always use actorId as username
+      const farmerUsername = session?.actorId || '';
 
       if (c.createBatchV2) {
         const tx = await c.createBatchV2(batchId, cropType, BigInt(quantity), harvestDate, farmLocation, hash, farmerName, farmerUsername);
@@ -267,7 +309,15 @@
     async getBatchesForUsername(username) {
       await this.init();
       // If no username provided, try to get from current session
-      const actualUsername = username || (await (window.getCurrentActorId ? window.getCurrentActorId() : Promise.resolve('')));
+
+      let actualUsername = username;
+      if (!actualUsername) {
+        if (typeof window.getCurrentActorId === 'function') {
+          actualUsername = await window.getCurrentActorId();
+        } else {
+          console.warn('window.getCurrentActorId is not defined. Username may be missing.');
+        }
+      }
       if (!actualUsername) {
         console.warn('No username available for batch fetch');
         return [];
@@ -338,7 +388,15 @@
     async addCollection({ farmerBatchId, farmerId, cropName, quantity, collectorId }) {
       const c = this.requireSigner();
       // Use current actorId as collectorId if not provided
-      const actualCollectorId = collectorId || (await (window.getCurrentActorId ? window.getCurrentActorId() : Promise.resolve(''))) || 'unknown';
+      let actualCollectorId = collectorId;
+      if (!actualCollectorId) {
+        if (typeof window.getCurrentActorId === 'function') {
+          actualCollectorId = await window.getCurrentActorId();
+        } else {
+          console.warn('window.getCurrentActorId is not defined. CollectorId may be missing.');
+        }
+      }
+      actualCollectorId = actualCollectorId || 'unknown';
       const tx = await c.addCollection(farmerBatchId, farmerId, cropName, BigInt(quantity), actualCollectorId);
       return await tx.wait();
     },
@@ -350,7 +408,15 @@
     async addInspection({ batchId, inspectorId, result, notes }) {
       const c = this.requireSigner();
       // Use current actorId as inspectorId if not provided
-      const actualInspectorId = inspectorId || (await (window.getCurrentActorId ? window.getCurrentActorId() : Promise.resolve(''))) || 'unknown';
+      let actualInspectorId = inspectorId;
+      if (!actualInspectorId) {
+        if (typeof window.getCurrentActorId === 'function') {
+          actualInspectorId = await window.getCurrentActorId();
+        } else {
+          console.warn('window.getCurrentActorId is not defined. InspectorId may be missing.');
+        }
+      }
+      actualInspectorId = actualInspectorId || 'unknown';
       const tx = await c.addInspection(batchId, actualInspectorId, result, notes);
       return await tx.wait();
     },
@@ -362,7 +428,15 @@
     async createProduct({ productId, sourceBatchId, productType, quantityProcessed, wastage, processingDate, expiryDate, manufacturerId }) {
       const c = this.requireSigner();
       // Use current actorId as manufacturerId if not provided
-      const actualManufacturerId = manufacturerId || (await (window.getCurrentActorId ? window.getCurrentActorId() : Promise.resolve(''))) || 'unknown';
+      let actualManufacturerId = manufacturerId;
+      if (!actualManufacturerId) {
+        if (typeof window.getCurrentActorId === 'function') {
+          actualManufacturerId = await window.getCurrentActorId();
+        } else {
+          console.warn('window.getCurrentActorId is not defined. ManufacturerId may be missing.');
+        }
+      }
+      actualManufacturerId = actualManufacturerId || 'unknown';
       const tx = await c.createProduct(
         productId,
         sourceBatchId,
@@ -606,18 +680,24 @@
 
     // --- Lightweight off-chain metadata helpers (for names & extras) ---
     storeBatchMeta(batchId, meta) {
+      // Warning: localStorage is browser-specific and not persistent for production
       try {
         const key = 'batch_meta';
         const all = JSON.parse(localStorage.getItem(key) || '{}');
         all[batchId] = { ...(all[batchId] || {}), ...meta };
         localStorage.setItem(key, JSON.stringify(all));
-      } catch { }
+      } catch (e) {
+        console.warn('Failed to store batch meta in localStorage:', e);
+      }
     },
     getBatchMeta(batchId) {
       try {
         const all = JSON.parse(localStorage.getItem('batch_meta') || '{}');
         return all[batchId] || null;
-      } catch { return null; }
+      } catch (e) {
+        console.warn('Failed to read batch meta from localStorage:', e);
+        return null;
+      }
     }
   };
 

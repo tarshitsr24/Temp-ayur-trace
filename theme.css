@@ -1,8 +1,6 @@
 /* AyurTrace unified theme (based on stakeholders/farmer.html and root style.css) */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind CSS will be loaded via CDN in your HTML. Add custom styles below if needed. */
 
 :root {
     /* Colors from AyurTrace Design System (style.css) */
@@ -435,7 +433,7 @@ header,
     max-width: 200px;
     max-height: 200px;
     border-radius: var(--radius-sm);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .remove-image-btn {
@@ -596,12 +594,12 @@ header,
     .form-grid {
         grid-template-columns: 1fr !important;
     }
-    
+
     .input-group {
         flex-direction: column !important;
         gap: 12px !important;
     }
-    
+
     .btn-sm {
         width: 100%;
     }
@@ -616,7 +614,7 @@ header,
 
 .card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
@@ -630,15 +628,24 @@ header,
     animation: fadeInUp 0.6s ease forwards;
 }
 
-.timeline-item:nth-child(2) { animation-delay: 0.1s; }
-.timeline-item:nth-child(3) { animation-delay: 0.2s; }
-.timeline-item:nth-child(4) { animation-delay: 0.3s; }
+.timeline-item:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.timeline-item:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.timeline-item:nth-child(4) {
+    animation-delay: 0.3s;
+}
 
 @keyframes fadeInUp {
     from {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -728,7 +735,7 @@ header,
     width: 100%;
     max-width: 420px;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* QR Section */
@@ -748,7 +755,7 @@ header,
     padding: 20px;
     background: white;
     border-radius: 16px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     margin-bottom: 24px;
 }
 
@@ -800,49 +807,49 @@ header,
     .form-row {
         grid-template-columns: 1fr !important;
     }
-    
+
     .input-group {
         flex-direction: column !important;
         gap: 12px !important;
     }
-    
+
     .btn-sm {
         width: 100%;
     }
-    
+
     .container {
         padding: 0 1rem !important;
     }
-    
+
     .main-content {
         padding: 1rem 0 !important;
     }
-    
+
     .dashboard-header {
         margin-bottom: 1.5rem !important;
         padding: 1.5rem !important;
     }
-    
+
     .dashboard-header h1 {
         font-size: 2rem !important;
     }
-    
+
     .card {
         margin-bottom: 1.5rem !important;
     }
-    
+
     .card-header {
         padding: 16px 20px !important;
     }
-    
+
     .card-header h2 {
         font-size: 1.25rem !important;
     }
-    
+
     .card-header p {
         font-size: 13px !important;
     }
-    
+
     .card-content {
         padding: 20px !important;
     }
@@ -853,24 +860,30 @@ header,
         flex-direction: column !important;
         gap: 1rem !important;
     }
-    
+
     .nav-links {
         order: -1;
     }
-    
+
     .user-menu {
         font-size: 14px !important;
     }
-    
-    .btn, .btn-primary, .btn-secondary, .btn-success, .btn-warning, .btn-danger {
+
+    .btn,
+    .btn-primary,
+    .btn-secondary,
+    .btn-success,
+    .btn-warning,
+    .btn-danger {
         padding: 12px 16px !important;
         font-size: 14px !important;
         min-height: 44px !important;
     }
-    
+
     .input-field {
         padding: 12px 14px !important;
-        font-size: 16px !important; /* Prevents zoom on iOS */
+        font-size: 16px !important;
+        /* Prevents zoom on iOS */
     }
 }
 
@@ -1219,8 +1232,13 @@ button[type="submit"]:active {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Small buttons for icons */

@@ -10,17 +10,17 @@ const SESSION_KEY = 'ayurtrace_user';
 // Role mapping for consistent role handling
 const ROLE_MAPPING = {
     1: 'farmer',
-    2: 'collector', 
+    2: 'collector',
     3: 'auditor',
     4: 'manufacturer',
     5: 'distributor'
 };
 
 function saveSession(user) {
-    try { localStorage.setItem(SESSION_KEY, JSON.stringify(user)); } catch {}
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify(user)); } catch { }
 }
 function clearSession() {
-    try { localStorage.removeItem(SESSION_KEY); } catch {}
+    try { localStorage.removeItem(SESSION_KEY); } catch { }
 }
 function readSession() {
     try {
@@ -82,7 +82,9 @@ async function signIn(actorId, password, role) {
             return null;
         }
 
+        // WARNING: Insecure plain-text password comparison! For production, use hashed passwords and secure comparison.
         if (user.password !== password) {
+            console.warn('Insecure password check: passwords should be hashed and compared securely!');
             return null;
         }
 
@@ -126,7 +128,7 @@ async function syncOnChainProfile(sessionUser) {
     const name = sessionUser.name || sessionUser.actorId;
     const username = sessionUser.actorId; // Use actorId as global username
     const role = sessionUser.role;
-    
+
     try {
         await window.Blockchain.init();
         const c = window.Blockchain.contractRW;
@@ -136,7 +138,7 @@ async function syncOnChainProfile(sessionUser) {
         else if (role === 'auditor') await c.setAuditorProfile(name, username);
         else if (role === 'manufacturer') await c.setManufacturerProfile(name, username);
         else if (role === 'distributor') await c.setDistributorProfile(name, username);
-        
+
         console.log(`✅ Synced ${role} profile: ${name} (${username})`);
     } catch (e) {
         console.warn(`⚠️ Profile sync failed for ${role}:`, e?.message || e);

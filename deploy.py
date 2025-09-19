@@ -9,24 +9,30 @@ from solcx.exceptions import SolcInstallationError
 # ---------- USER CONFIG ----------
 # Ensure this matches your Ganache or other RPC endpoint
 GANACHE_URL = "HTTP://127.0.0.1:7545"
+
 # Your Ganache account address and private key are now set directly here
 ACCOUNT_ADDRESS = "0xC71412306de7874c0f9e7B9117Dab825A77e4590"
 PRIVATE_KEY = "0xb55356cb07c2df2d1a018f25a5e46196fc7e398e1af74a70438702aa85788d01"
 # Path to your solidity file
-SOLIDITY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "AyurTraceUnified.sol")
+SOLIDITY_FILE = os.path.join(os.path.dirname(
+    os.path.abspath(__file__)), "AyurTraceUnified.sol")
 # Solidity compiler version
 SOLC_VERSION = "0.8.20"
 
 # ---------------------------------
 
+
 def check_config():
     """Validates that necessary configuration is present."""
     if not ACCOUNT_ADDRESS or not PRIVATE_KEY:
-        print("[ERROR] Error: ACCOUNT_ADDRESS and PRIVATE_KEY must be set in the script.")
+        print(
+            "[ERROR] Error: ACCOUNT_ADDRESS and PRIVATE_KEY must be set in the script.")
         sys.exit(1)
     if not Web3.is_address(ACCOUNT_ADDRESS):
-        print(f"[ERROR] Error: '{ACCOUNT_ADDRESS}' is not a valid Ethereum address.")
+        print(
+            f"[ERROR] Error: '{ACCOUNT_ADDRESS}' is not a valid Ethereum address.")
         sys.exit(1)
+
 
 def ensure_solc(version: str):
     """Checks for the specified solc version and installs it if not found."""
@@ -38,10 +44,12 @@ def ensure_solc(version: str):
         try:
             install_solc(version)
             set_solc_version(version)
-            print(f"[SUCCESS] Successfully installed and set solc version {version}.")
+            print(
+                f"[SUCCESS] Successfully installed and set solc version {version}.")
         except SolcInstallationError as e:
             print(f"[ERROR] Failed to install solc {version}: {e}")
             sys.exit(1)
+
 
 def compile_contract(source_path: str):
     """Compiles the Solidity contract and returns ABI and bytecode."""
@@ -77,6 +85,7 @@ def compile_contract(source_path: str):
     print(f"[SUCCESS] Compiled contract: '{contract_name}'")
     return contract_name, abi, bytecode
 
+
 def deploy(w3: Web3, abi, bytecode, account_address, private_key):
     """Deploys the contract to the blockchain."""
     print(f"\n- Preparing to deploy from account: {account_address}")
@@ -85,8 +94,9 @@ def deploy(w3: Web3, abi, bytecode, account_address, private_key):
     chain_id = w3.eth.chain_id
     gas_price = w3.eth.gas_price
 
-    print(f"  - Chain ID: {chain_id}, Nonce: {nonce}, Gas Price: {w3.from_wei(gas_price, 'gwei')} Gwei")
-    
+    print(
+        f"  - Chain ID: {chain_id}, Nonce: {nonce}, Gas Price: {w3.from_wei(gas_price, 'gwei')} Gwei")
+
     constructor = Contract.constructor()
 
     try:
@@ -109,17 +119,18 @@ def deploy(w3: Web3, abi, bytecode, account_address, private_key):
 
     signed_tx = w3.eth.account.sign_transaction(tx, private_key=private_key)
     tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-    
+
     print(f"  - Transaction sent. Hash: {tx_hash.hex()}")
     print("  - Waiting for transaction receipt...")
-    
+
     receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
-    
+
     print(f"\n[INFO] Contract deployed successfully!")
     print(f"   - Address: {receipt.contractAddress}")
     print(f"   - Block: {receipt.blockNumber}")
     print(f"   - Gas Used: {receipt.gasUsed}")
     return receipt
+
 
 def main():
     """Main execution function."""
@@ -128,7 +139,8 @@ def main():
 
     w3 = Web3(Web3.HTTPProvider(GANACHE_URL))
     if not w3.is_connected():
-        print(f"[ERROR] Failed to connect to RPC at {GANACHE_URL}. Is Ganache running?")
+        print(
+            f"[ERROR] Failed to connect to RPC at {GANACHE_URL}. Is Ganache running?")
         sys.exit(1)
 
     print(f"[SUCCESS] Connected to RPC. Chain ID: {w3.eth.chain_id}")
@@ -136,23 +148,27 @@ def main():
     try:
         balance_wei = w3.eth.get_balance(ACCOUNT_ADDRESS)
         balance_eth = w3.from_wei(balance_wei, 'ether')
-        print(f"[SUCCESS] Account {ACCOUNT_ADDRESS} balance: {balance_eth:.4f} ETH")
+        print(
+            f"[SUCCESS] Account {ACCOUNT_ADDRESS} balance: {balance_eth:.4f} ETH")
         if balance_wei == 0:
-            print("   Warning: Account has zero balance. Deployment will fail if gas is required.")
+            print(
+                "   Warning: Account has zero balance. Deployment will fail if gas is required.")
     except Exception as e:
         print(f"[ERROR] Could not get balance for account. Error: {e}")
         sys.exit(1)
 
-
     name, abi, bytecode = compile_contract(SOLIDITY_FILE)
     receipt = deploy(w3, abi, bytecode, ACCOUNT_ADDRESS, PRIVATE_KEY)
 
-    out = {"contractName": name, "contractAddress": receipt.contractAddress, "abi": abi}
-    out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"deployment_details.json")
+    out = {"contractName": name,
+           "contractAddress": receipt.contractAddress, "abi": abi}
+    out_path = os.path.join(os.path.dirname(
+        os.path.abspath(__file__)), f"deployment_details.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2)
     print(f"\n[SUCCESS] Deployment details saved to: {out_path}")
     print("--- Deployment Finished ---")
+
 
 if __name__ == "__main__":
     main()
