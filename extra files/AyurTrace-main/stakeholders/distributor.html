@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributor Dashboard - HerbChain</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-green: #27856a;
+            --primary-green-dark: #1f6b55;
+            --primary-green-light: #e9f3f1;
+            --status-bg: #e6f6e6;
+            --status-text: #3c9d3c;
+            --background-color: #f7f9fc;
+            --card-background: #ffffff;
+            --text-primary: #121f3e;
+            --text-secondary: #5a647e;
+            --border-color: #e5e7eb;
+            --error-red: #e53e3e;
+            --font-family: 'Inter', sans-serif;
+        }
+
+        /* --- Base & Typography --- */
+        body {
+            font-family: var(--font-family);
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* --- Header --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background-color: var(--card-background);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        header .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--primary-green);
+        }
+
+        header nav a {
+            text-decoration: none;
+            color: var(--text-secondary);
+            margin-left: 1.5rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+            padding: 0.5rem;
+            border-bottom: 2px solid transparent;
+        }
+
+        header nav a:hover {
+            color: var(--primary-green);
+        }
+
+        header nav a.active {
+            color: var(--primary-green);
+            font-weight: 600;
+            border-bottom: 2px solid var(--primary-green);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .distributor-id {
+            background-color: var(--primary-green-light);
+            color: var(--primary-green);
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        /* --- Dashboard Layout & Cards --- */
+        .dashboard-header {
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-header h2 {
+            font-size: 2.25rem;
+            margin-bottom: 0.25rem;
+            font-weight: 700;
+        }
+
+        .dashboard-header p {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            margin-top: 0;
+        }
+
+        .dashboard-content {
+            display: grid;
+            grid-template-columns: 1fr 1.75fr;
+            gap: 2rem;
+        }
+
+        .card {
+            background-color: var(--card-background);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            margin-top: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--primary-green);
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        /* --- Form Elements --- */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .input-group {
+            display: flex;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 0.875rem 1.25rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            color: var(--text-primary);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        input::placeholder {
+            color: #9ca3af;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 3px var(--primary-green-light);
+        }
+
+        .input-group input {
+            border-radius: 8px 0 0 8px;
+            border-right: none;
+        }
+
+        .fetch-btn {
+            border: 1px solid var(--primary-green);
+            background-color: var(--primary-green);
+            color: white;
+            padding: 0 1.5rem;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+        }
+
+        .fetch-btn:hover {
+            background-color: var(--primary-green-dark);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.875rem;
+            border: none;
+            background-color: var(--primary-green);
+            color: white;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--primary-green-dark);
+            transform: translateY(-2px);
+        }
+
+        /* --- Table Styles --- */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: var(--primary-green-light);
+            color: var(--primary-green);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .status-badge {
+            background-color: var(--status-bg);
+            color: var(--status-text);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .blockchain-hash {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background-color: #f3f4f6;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* --- Responsibilities Section --- */
+        .responsibilities {
+            background-color: var(--primary-green-light);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .responsibilities h4 {
+            color: var(--primary-green);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .responsibilities ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .responsibilities li {
+            padding: 0.5rem 0;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .responsibilities li:before {
+            content: "✓";
+            color: var(--primary-green);
+            margin-right: 0.75rem;
+            font-weight: bold;
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 768px) {
+            .dashboard-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            
+            header nav {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.3/dist/web3.min.js"></script>
+    <link rel="stylesheet" href="../theme.css">
+    <script src="../config.js"></script>
+</head>
+<body>
+    <div id="auth-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 101; display: flex; align-items: center; justify-content: center;">
+        <div style="background-color: white; padding: 20px; border-radius: 10px;">
+            <h2>Login or Sign Up</h2>
+            <input type="email" id="email" placeholder="Email" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+            <input type="password" id="password" placeholder="Password" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+            <button id="login-btn" style="padding: 10px; margin-right: 10px;">Login</button>
+            <button id="signup-btn" style="padding: 10px;">Sign Up</button>
+        </div>
+    </div>
+    <!-- Header -->
+    <header>
+        <div class="logo">
+            <h1>🌿 HerbChain</h1>
+        </div>
+        <nav>
+            <a href="#" class="active">Dashboard</a>
+            <a href="#">Inventory</a>
+            <a href="#">Dispatch</a>
+            <a href="#">Reports</a>
+            <a href="#">Blockchain</a>
+        </nav>
+        <div class="user-info">
+            <span class="distributor-id">ID: DIST-001</span>
+            <span>Welcome, John Distributor</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="dashboard-header">
+            <h2>Distributor Dashboard</h2>
+            <p>Manage herb authenticity and distribution on blockchain</p>
+        </div>
+
+        <div class="dashboard-content">
+            <!-- Left Column - Input Forms -->
+            <div class="left-column">
+                <!-- Responsibilities Card -->
+                <div class="card">
+                    <h3 class="card-header">📋 Your Responsibilities</h3>
+                    <div class="responsibilities">
+                        <ul>
+                            <li>Receive products from manufacturers</li>
+                            <li>Store in warehouse with proper conditions</li>
+                            <li>Dispatch to market/retailers</li>
+                            <li>Maintain blockchain authenticity records</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Product Reception Form -->
+                <div class="card">
+                    <h3 class="card-header">📦 Receive Product</h3>
+                    <form id="receive-form">
+                        <div class="form-group">
+                            <label for="batch-id">Product Batch ID</label>
+                            <div class="input-group">
+                                <input type="text" id="batch-id" placeholder="Enter or scan batch ID" required />
+                                <button type="button" class="fetch-btn" id="fetch-reception-details-btn">Fetch Details</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="herb-type">Herb Type</label>
+                            <input type="text" id="herb-type" placeholder="e.g., Turmeric" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quantity-received">Quantity Received</label>
+                            <input type="number" id="quantity-received" placeholder="Enter quantity" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="storage-location">Storage Location</label>
+                            <select id="storage-location" required>
+                                <option value="">Select warehouse section</option>
+                                <option value="A1">Warehouse A - Section 1</option>
+                                <option value="A2">Warehouse A - Section 2</option>
+                                <option value="B1">Warehouse B - Section 1</option>
+                                <option value="C1">Cold Storage - Section 1</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="submit-btn" id="record-reception-btn">Record Reception</button>
+                    </form>
+                </div>
+
+                <!-- Dispatch Form -->
+                <div class="card">
+                    <h3 class="card-header">🚛 Dispatch Products</h3>
+                    <form id="dispatch-form">
+                        <div class="form-group">
+                            <label for="dispatch-batch">Batch ID to Dispatch</label>
+                            <input type="text" id="dispatch-batch" placeholder="Enter batch ID" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dispatch-quantity">Quantity to Dispatch</label>
+                            <input type="number" id="dispatch-quantity" placeholder="Enter quantity" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="destination">Destination</label>
+                            <input type="text" id="destination" placeholder="Retailer/Market name" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dispatch-date">Dispatch Date</label>
+                            <input type="date" id="dispatch-date" required />
+                        </div>
+
+                        <button type="submit" class="submit-btn" id="record-dispatch-btn">Record Dispatch</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column - Data Display -->
+            <div class="right-column">
+                <!-- Current Inventory -->
+                <div class="card">
+                    <h3 class="card-header">📊 Current Inventory</h3>
+                    <div class="table-container">
+                        <table id="inventory-table">
+                            <thead>
+                                <tr>
+                                    <th>Batch ID</th>
+                                    <th>Herb Type</th>
+                                    <th>Quantity</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Inventory items will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="card">
+                    <h3 class="card-header">⛓️ Recent Blockchain Transactions</h3>
+                    <div class="table-container">
+                        <table id="transactions-table">
+                            <thead>
+                                <tr>
+                                    <th>Transaction</th>
+                                    <th>Batch ID</th>
+                                    <th>Action</th>
+                                    <th>Blockchain Hash</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Transactions will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Authenticity Verification -->
+                <div class="card">
+                    <h3 class="card-header">✅ Authenticity Status</h3>
+                    <div style="text-align: center; padding: 2rem;">
+                        <div style="font-size: 3rem; color: var(--primary-green); margin-bottom: 1rem;">🛡️</div>
+                        <h4 style="color: var(--primary-green); margin: 0;">All Products Verified</h4>
+                        <p style="color: var(--text-secondary); margin-top: 0.5rem;">
+                            Blockchain authenticity maintained across all inventory
+                        </p>
+                        <div style="background-color: var(--status-bg); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                            <strong>Last Verification:</strong> <span id="last-verification">N/A</span><br>
+                            <strong>Network Status:</strong> <span id="network-status" style="color: var(--status-text);">Connected</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const SUPABASE_URL = 'https://zanejoswscmmppiuifso.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbmVqb3N3c2NtbXBwaXVpZnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxMzE1MjYsImV4cCI6MjA3MzcwNzUyNn0.0iW4ap4gNnF1SQkM8eFDA14ukUFuZeuCmvrMxsNxo_4';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Import configuration from config.js
+        const web3 = new Web3(new Web3.providers.HttpProvider(window.config.GANACHE_URL));
+
+        // IMPORTANT: Replace 'your_private_key_here' in config.js with a private key from Ganache
+        const PRIVATE_KEY = window.config.PRIVATE_KEY;
+        const account = web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY);
+        web3.eth.defaultAccount = account.address;
+
+        const HERB_CHAIN_DISTRIBUTOR_ADDRESS = window.config.CONTRACT_ADDRESSES.HerbChainDistributor;
+        const HERB_CHAIN_DISTRIBUTOR_ABI = window.config.CONTRACT_ABIS.HerbChainDistributor;{"anonymous":false,"inputs":[{"indexed":true,"internalType":"string","name":"batchId","type":"string"},{"indexed":false,"internalType":"uint256","name":"quantityDispatched","type":"uint256"},{"indexed":false,"internalType":"string","name":"destination","type":"string"},{"indexed":false,"internalType":"address","name":"recordedBy","type":"address"}],"name":"ProductDispatched","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"string","name":"batchId","type":"string"},{"indexed":false,"internalType":"string","name":"herbType","type":"string"},{"indexed":false,"internalType":"uint256","name":"quantity","type":"uint256"},{"indexed":false,"internalType":"string","name":"storageLocation","type":"string"},{"indexed":false,"internalType":"address","name":"recordedBy","type":"address"}],"name":"ProductReceived","type":"event"},{"inputs":[{"internalType":"string","name":"","type":"string"}],"name":"inventory","outputs":[{"internalType":"string","name":"batchId","type":"string"},{"internalType":"string","name":"herbType","type":"string"},{"internalType":"uint256","name":"quantity","type":"uint256"},{"internalType":"string","name":"storageLocation","type":"string"},{"internalType":"string","name":"status","type":"string"},{"internalType":"bool","name":"isInitialized","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"_batchId","type":"string"},{"internalType":"uint256","name":"_quantityToDispatch","type":"uint256"},{"internalType":"string","name":"_destination","type":"string"}],"name":"recordDispatch","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"_batchId","type":"string"},{"internalType":"string","name":"_herbType","type":"string"},{"internalType":"uint256","name":"_quantity","type":"uint256"},{"internalType":"string","name":"_storageLocation","type":"string"}],"name":"recordReception","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+        const herbChainDistributor = new web3.eth.Contract(HERB_CHAIN_DISTRIBUTOR_ABI, HERB_CHAIN_DISTRIBUTOR_ADDRESS);
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const authModal = document.getElementById('auth-modal');
+            const loginBtn = document.getElementById('login-btn');
+            const signupBtn = document.getElementById('signup-btn');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+
+            // Check for logged in user
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                authModal.style.display = 'flex';
+            }
+
+            // Login user
+            loginBtn.addEventListener('click', async () => {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: emailInput.value,
+                    password: passwordInput.value,
+                });
+                if (error) {
+                    alert(`Error logging in: ${error.message}`);
+                } else {
+                    authModal.style.display = 'none';
+                    location.reload();
+                }
+            });
+
+            // Signup user
+            signupBtn.addEventListener('click', async () => {
+                const { data, error } = await supabase.auth.signUp({
+                    email: emailInput.value,
+                    password: passwordInput.value,
+                });
+                if (error) {
+                    alert(`Error signing up: ${error.message}`);
+                } else {
+                    alert('Signup successful! Please check your email to verify your account.');
+                }
+            });
+
+            const receiveForm = document.getElementById('receive-form');
+            const dispatchForm = document.getElementById('dispatch-form');
+            const inventoryTableBody = document.querySelector('#inventory-table tbody');
+            const transactionsTableBody = document.querySelector('#transactions-table tbody');
+            const fetchReceptionDetailsBtn = document.getElementById('fetch-reception-details-btn');
+
+            // Set current date for dispatch form
+            document.getElementById('dispatch-date').valueAsDate = new Date();
+
+            // Fetch details for reception form (from Manufacturer products)
+            fetchReceptionDetailsBtn.addEventListener('click', async () => {
+                const batchId = document.getElementById('batch-id').value.trim();
+                if (!batchId) {
+                    alert('Please enter a Product Batch ID.');
+                    return;
+                }
+
+                const { data: product, error } = await supabase
+                    .from('manufacturer_products')
+                    .select('*')
+                    .eq('product_id', batchId)
+                    .single();
+
+                if (error || !product) {
+                    alert('Product Batch ID not found in Manufacturer records.');
+                    return;
+                }
+
+                document.getElementById('herb-type').value = product.product_type;
+                document.getElementById('quantity-received').value = product.quantity_processed;
+            });
+
+            // Handle Product Reception
+            receiveForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const batchId = document.getElementById('batch-id').value.trim();
+                const herbType = document.getElementById('herb-type').value.trim();
+                const quantityReceived = parseInt(document.getElementById('quantity-received').value);
+                const storageLocation = document.getElementById('storage-location').value;
+
+                if (!batchId || !herbType || isNaN(quantityReceived) || !storageLocation) {
+                    alert('Please fill all reception fields.');
+                    return;
+                }
+
+                const submitBtn = document.getElementById('record-reception-btn');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Recording...';
+
+                try {
+                    // 1. Record reception on blockchain
+                    const recordReceptionTx = herbChainDistributor.methods.recordReception(
+                        batchId,
+                        herbType,
+                        quantityReceived,
+                        storageLocation
+                    );
+
+                    const gas = await recordReceptionTx.estimateGas({ from: account.address });
+                    const gasPrice = await web3.eth.getGasPrice();
+                    const data = recordReceptionTx.encodeABI();
+                    const nonce = await web3.eth.getTransactionCount(account.address);
+
+                    const signedTx = await web3.eth.accounts.signTransaction(
+                        {
+                            to: HERB_CHAIN_DISTRIBUTOR_ADDRESS,
+                            data,
+                            gas,
+                            gasPrice,
+                            nonce,
+                        },
+                        PRIVATE_KEY
+                    );
+
+                    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+                    console.log('Reception Transaction receipt:', receipt);
+
+                    // 2. Insert/Update inventory in Supabase
+                    const { data: supabaseData, error: supabaseError } = await supabase
+                        .from('distributor_inventory')
+                        .upsert({
+                            batch_id: batchId,
+                            herb_type: herbType,
+                            quantity: quantityReceived,
+                            storage_location: storageLocation,
+                            status: 'In Stock',
+                        }, { onConflict: 'batch_id' });
+
+                    if (supabaseError) {
+                        throw new Error(`Supabase error: ${supabaseError.message}`);
+                    }
+
+                    alert('Product reception recorded successfully!');
+                    receiveForm.reset();
+                    loadInventory();
+                    addTransactionToTable('Received', batchId, receipt.transactionHash);
+
+                } catch (error) {
+                    alert(`Error recording reception: ${error.message}`);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Record Reception';
+                }
+            });
+
+            // Handle Product Dispatch
+            dispatchForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const batchId = document.getElementById('dispatch-batch').value.trim();
+                const quantityToDispatch = parseInt(document.getElementById('dispatch-quantity').value);
+                const destination = document.getElementById('destination').value.trim();
+                const dispatchDate = document.getElementById('dispatch-date').value;
+
+                if (!batchId || isNaN(quantityToDispatch) || !destination || !dispatchDate) {
+                    alert('Please fill all dispatch fields.');
+                    return;
+                }
+
+                const submitBtn = document.getElementById('record-dispatch-btn');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Recording...';
+
+                try {
+                    // Check current inventory quantity
+                    const { data: inventoryItem, error: fetchError } = await supabase
+                        .from('distributor_inventory')
+                        .select('quantity')
+                        .eq('batch_id', batchId)
+                        .single();
+
+                    if (fetchError || !inventoryItem) {
+                        throw new Error('Batch ID not found in inventory.');
+                    }
+
+                    if (inventoryItem.quantity < quantityToDispatch) {
+                        throw new Error('Insufficient quantity in stock for dispatch.');
+                    }
+
+                    // 1. Record dispatch on blockchain
+                    const recordDispatchTx = herbChainDistributor.methods.recordDispatch(
+                        batchId,
+                        quantityToDispatch,
+                        destination
+                    );
+
+                    const gas = await recordDispatchTx.estimateGas({ from: account.address });
+                    const gasPrice = await web3.eth.getGasPrice();
+                    const data = recordDispatchTx.encodeABI();
+                    const nonce = await web3.eth.getTransactionCount(account.address);
+
+                    const signedTx = await web3.eth.accounts.signTransaction(
+                        {
+                            to: HERB_CHAIN_DISTRIBUTOR_ADDRESS,
+                            data,
+                            gas,
+                            gasPrice,
+                            nonce,
+                        },
+                        PRIVATE_KEY
+                    );
+
+                    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+                    console.log('Dispatch Transaction receipt:', receipt);
+
+                    // 2. Update inventory in Supabase
+                    const newQuantity = inventoryItem.quantity - quantityToDispatch;
+                    const newStatus = newQuantity === 0 ? 'Dispatched' : 'In Stock';
+
+                    const { data: supabaseData, error: supabaseError } = await supabase
+                        .from('distributor_inventory')
+                        .update({
+                            quantity: newQuantity,
+                            status: newStatus,
+                        })
+                        .eq('batch_id', batchId);
+
+                    if (supabaseError) {
+                        throw new Error(`Supabase error: ${supabaseError.message}`);
+                    }
+
+                    alert('Product dispatch recorded successfully!');
+                    dispatchForm.reset();
+                    loadInventory();
+                    addTransactionToTable('Dispatched', batchId, receipt.transactionHash);
+
+                } catch (error) {
+                    alert(`Error recording dispatch: ${error.message}`);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Record Dispatch';
+                }
+            });
+
+            async function loadInventory() {
+                const { data: inventory, error } = await supabase
+                    .from('distributor_inventory')
+                    .select('*')
+                    .eq('status', 'In Stock'); // Only show in-stock items
+
+                if (error) {
+                    console.error('Error loading inventory:', error);
+                    return;
+                }
+
+                inventoryTableBody.innerHTML = '';
+                if (inventory.length === 0) {
+                    inventoryTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No items in inventory.</td></tr>';
+                    return;
+                }
+
+                inventory.forEach(item => {
+                    const row = `
+                        <tr>
+                            <td>${item.batch_id}</td>
+                            <td>${item.herb_type}</td>
+                            <td>${item.quantity} kg</td>
+                            <td>${item.storage_location}</td>
+                            <td><span class="status-badge">${item.status}</span></td>
+                        </tr>
+                    `;
+                    inventoryTableBody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+
+            function addTransactionToTable(action, batchId, hash) {
+                const date = new Date().toISOString().split('T')[0];
+                const row = `
+                    <tr>
+                        <td>#TX${Math.floor(Math.random() * 10000)}</td>
+                        <td>${batchId}</td>
+                        <td>${action}</td>
+                        <td><span class="blockchain-hash">${hash.substring(0, 10)}...</span></td>
+                        <td>${date}</td>
+                    </tr>
+                `;
+                transactionsTableBody.insertAdjacentHTML('afterbegin', row); // Add to top
+            }
+
+            async function loadTransactions() {
+                // For simplicity, we'll load from blockchain events or a dedicated transactions table if available
+                // For now, we'll just show dummy data or rely on addTransactionToTable
+                transactionsTableBody.innerHTML = `
+                    <tr>
+                        <td>#TX001</td>
+                        <td>HERB-2024-001</td>
+                        <td>Received</td>
+                        <td><span class="blockchain-hash">0x1a2b3c4d...</span></td>
+                        <td>2024-03-15</td>
+                    </tr>
+                    <tr>
+                        <td>#TX002</td>
+                        <td>HERB-2024-002</td>
+                        <td>Stored</td>
+                        <td><span class="blockchain-hash">0x5e6f7g8h...</span></td>
+                        <td>2024-03-14</td>
+                    </tr>
+                `;
+            }
+
+            // Initial loads
+            if (user) {
+                loadInventory();
+                loadTransactions();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer Dashboard - AyuTrace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="#" class="logo">
+                    <i class="fas fa-seedling"></i>
+                    AyuTrace
+                </a>
+                <div class="nav-links">
+                    <a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a>
+                </div>
+                <div class="user-menu">
+                    <div class="user-avatar">FN</div>
+                    <span>Farmer Name</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <section class="dashboard-header">
+                <h1>Welcome back!</h1>
+                <p>Manage your supply chain operations with ease.</p>
+            </section>
+
+            <section class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-icon total"><i class="fas fa-boxes"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">Total Batches</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon transit"><i class="fas fa-truck"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">In Transit</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon delivered"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">Delivered</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon processing"><i class="fas fa-clock"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">Processing</div>
+                    </div>
+                </div>
+            </section>
+
+            <div style="margin-bottom: 2rem;">
+                <button class="create-batch-btn" id="showCreateBatchFormBtn">
+                    <i class="fas fa-plus"></i>
+                    Create New Batch
+                </button>
+            </div>
+
+            <section class="card" id="createBatchSection" style="display: none;">
+                <h3 class="card-header">
+                    <i class="fas fa-plus-circle"></i>
+                    Create New Batch
+                </h3>
+                <form id="newBatchForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="cropType">Crop Type</label>
+                            <select id="cropType" name="cropType" class="form-input" required>
+                                <option value="">Select Crop</option>
+                                <option value="Rice">Rice</option>
+                                <option value="Wheat">Wheat</option>
+                                <option value="Cotton">Cotton</option>
+                                <option value="Ashwagandha Powder">Ashwagandha Powder</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="quantity">Quantity (kg)</label>
+                            <input type="number" id="quantity" name="quantity" class="form-input"
+                                placeholder="e.g., 100" required min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="harvestDate">Harvest Date</label>
+                            <input type="date" id="harvestDate" name="harvestDate" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="farmLocation">Farm Location</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="text" id="farmLocation" name="farmLocation" class="form-input"
+                                    placeholder="Village or GPS coordinates" required>
+                                <button type="button" id="getLocationBtn" class="get-location-btn">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="geoTaggedPhoto">Upload Geo-tagged Photo (Optional)</label>
+                        <input type="file" id="geoTaggedPhoto" name="geoTaggedPhoto" accept="image/*"
+                            class="form-input">
+                        <div id="photoPreviewContainer" class="photo-preview-container" style="display:none;">
+                            <img id="photoPreview" src="/placeholder.svg" alt="Photo Preview">
+                            <div id="photoMetadataOverlay" class="photo-metadata-overlay" style="display: none;">
+                                <p><strong>Date:</strong> <span id="photoDate"></span> | <strong>Time:</strong> <span
+                                        id="photoTime"></span> | <strong>Location:</strong> <span
+                                        id="photoLocation"></span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-qrcode"></i>
+                        Generate Batch & QR Code
+                    </button>
+                </form>
+                <div id="qrCodeOutput" class="qr-code-section" style="display: none;">
+                    <h3>Batch Created Successfully!</h3>
+                    <p><strong>Batch ID:</strong> <span id="generatedBatchId"></span></p>
+                    <img id="generatedQrCode" src="/placeholder.svg" alt="QR Code">
+                </div>
+            </section>
+
+            <section class="card">
+                <h3 class="card-header">
+                    <i class="fas fa-history"></i>
+                    Your Batches
+                </h3>
+                <div class="batch-history-grid" id="batchHistoryGrid">
+                    <p style="color: var(--text-secondary); grid-column: 1 / -1; text-align: center; padding: 2rem 0;">
+                        You have not created any batches yet.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const newBatchForm = document.getElementById('newBatchForm');
+            const qrCodeOutput = document.getElementById('qrCodeOutput');
+            const generatedBatchId = document.getElementById('generatedBatchId');
+            const generatedQrCode = document.getElementById('generatedQrCode');
+            const batchHistoryGrid = document.getElementById('batchHistoryGrid');
+            const showCreateBatchFormBtn = document.getElementById('showCreateBatchFormBtn');
+            const createBatchSection = document.getElementById('createBatchSection');
+            const geoTaggedPhotoInput = document.getElementById('geoTaggedPhoto');
+            const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+            const photoPreview = document.getElementById('photoPreview');
+            const photoMetadataOverlay = document.getElementById('photoMetadataOverlay');
+            const photoDate = document.getElementById('photoDate');
+            const photoTime = document.getElementById('photoTime');
+            const photoLocation = document.getElementById('photoLocation');
+            const farmLocationInput = document.getElementById('farmLocation');
+            const getLocationBtn = document.getElementById('getLocationBtn');
+
+            showCreateBatchFormBtn.addEventListener('click', function () {
+                const isVisible = createBatchSection.style.display !== 'none';
+                createBatchSection.style.display = isVisible ? 'none' : 'block';
+                if (!isVisible) {
+                    createBatchSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+
+            function updatePhotoMetadataOverlay() {
+                const now = new Date();
+                photoDate.textContent = now.toLocaleDateString();
+                photoTime.textContent = now.toLocaleTimeString();
+                photoLocation.textContent = farmLocationInput.value || 'N/A';
+                if (photoPreview.src && photoPreview.style.display !== 'none') {
+                    photoMetadataOverlay.style.display = 'block';
+                }
+            }
+
+            geoTaggedPhotoInput.addEventListener('change', function (event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        photoPreview.src = e.target.result;
+                        photoPreview.style.display = 'block';
+                        photoPreviewContainer.style.display = 'block';
+                        updatePhotoMetadataOverlay();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            getLocationBtn.addEventListener('click', function () {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function (position) {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        farmLocationInput.value = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+                        updatePhotoMetadataOverlay();
+                    }, function (error) {
+                        alert(`Error getting location: ${error.message}`);
+                    });
+                } else {
+                    alert("Geolocation is not supported by this browser.");
+                }
+            });
+
+            newBatchForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const cropType = document.getElementById('cropType').value;
+                const quantity = document.getElementById('quantity').value;
+                const harvestDate = document.getElementById('harvestDate').value;
+                const farmLocation = document.getElementById('farmLocation').value;
+
+                const submitBtn = event.target.querySelector('.submit-btn');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<div class="loading"></div> Creating...';
+                submitBtn.disabled = true;
+
+                const placeholder = batchHistoryGrid.querySelector('p');
+                if (placeholder) {
+                    placeholder.remove();
+                }
+
+                setTimeout(() => {
+                    const datePart = new Date(harvestDate).toISOString().slice(0, 10).replace(/-/g, "");
+                    const batchId = `AYR-${datePart}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+                    const qrCodeData = `Batch ID: ${batchId}, Crop: ${cropType}, Quantity: ${quantity}kg, Harvest Date: ${harvestDate}, Location: ${farmLocation}`;
+                    const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeData)}`;
+
+                    generatedBatchId.textContent = batchId;
+                    generatedQrCode.src = qrCodeImageUrl;
+                    qrCodeOutput.style.display = 'block';
+
+                    const newBatchCard = document.createElement('div');
+                    newBatchCard.classList.add('batch-card');
+                    newBatchCard.innerHTML = `
+                        <div class="batch-header">
+                            <div class="crop-name">${cropType}</div>
+                            <span class="status pending">Pending</span>
+                        </div>
+                        <div class="batch-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Batch ID</span>
+                                <span class="detail-value">${batchId}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Quantity</span>
+                                <span class="detail-value">${quantity}kg</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Created</span>
+                                <span class="detail-value">Just now</span>
+                            </div>
+                        </div>
+                    `;
+                    batchHistoryGrid.prepend(newBatchCard);
+
+                    newBatchForm.reset();
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    document.getElementById('harvestDate').value = new Date().toISOString().split('T')[0];
+                    qrCodeOutput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 1500);
+            });
+
+            document.getElementById('harvestDate').value = new Date().toISOString().split('T')[0];
+        });
+    </script>
+</body>
+
+</html>

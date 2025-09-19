@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manufacturer Dashboard - AyurTrace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="theme.css">
+</head>
+
+<body>
+    <!-- Auth Check Script -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="supabase-auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="blockchain.js"></script>
+    <script>
+        // Check authentication using the proper auth system
+        async function checkAuth() {
+            const user = await getCurrentUser();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            if (user.role !== 'manufacturer') {
+                window.location.href = 'login.html';
+                return;
+            }
+        }
+        
+        // Run auth check when page loads
+        document.addEventListener('DOMContentLoaded', checkAuth);
+    </script>
+
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="index.html" class="logo">
+                    <i class="fas fa-industry"></i>
+                    AyuTrace
+                </a>
+                <div class="nav-links">
+                    <a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a>
+                </div>
+                <div class="user-menu">
+                    <div class="user-avatar">MN</div>
+                    <span>Manufacturer Name</span>
+                    <a href="#" id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i></a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <section class="dashboard-header">
+                <h1>Manufacturer Dashboard</h1>
+                <p>Process audited batches and create final, traceable products.</p>
+            </section>
+
+            <section class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-icon total"><i class="fas fa-boxes"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">Batches Processed</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon processing"><i class="fas fa-cogs"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">In Production</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon delivered"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">Products Created</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon transit"><i class="fas fa-percentage"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">0%</div>
+                        <div class="stat-label">Avg Wastage</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Supply Chain Timeline (First) -->
+            <section class="card" id="chainResultsSection" style="display: block;">
+                <h3 class="card-header">
+                    <i class="fas fa-route"></i>
+                    Supply Chain Timeline
+                </h3>
+                <div style="padding: 16px;">
+                    <div class="form-group">
+                        <label for="searchInput">Search/Scan Batch ID</label>
+                        <div class="input-group">
+                            <input type="text" id="searchInput" class="form-input" placeholder="Enter Batch ID or Collection ID">
+                            <button type="button" id="searchBtn" class="get-location-btn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            <button type="button" id="qrScanBtn" class="get-location-btn" style="margin-left: 8px; background: #8b5cf6;" title="Scan QR">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                        </div>
+                        <div id="qrScannerSection" style="display: none; margin-top: 16px; text-align: center;">
+                            <video id="qrVideo" style="width: 100%; max-width: 400px; border-radius: 8px;"></video>
+                            <div style="margin-top: 12px;">
+                                <button type="button" id="stopScanBtn" class="submit-btn" style="background: #ef4444;">
+                                    <i class="fas fa-times"></i> Stop Scanner
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="timelineResults" style="margin-top: 20px;">
+                        <p id="chainResultId" class="text-sm" style="color:#64748b; margin-bottom: 12px;">Enter a Batch ID to view supply chain history</p>
+                        <div id="chainTimeline" class="relative" style="padding-left: 16px; border-left: 2px solid #e2e8f0;">
+                            <p style="color:#94a3b8;">Search or scan a Batch ID to view the complete history.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Process Batch Form (Second) -->
+            <section class="card">
+                <h3 class="card-header">
+                    <i class="fas fa-plus-circle"></i>
+                    Process New Batch
+                </h3>
+                <form id="processForm">
+                    <div class="form-group">
+                        <label for="sourceBatchId">Audited Batch ID (from search above)</label>
+                        <div class="input-group">
+                            <input type="text" id="sourceBatchId" class="form-input" placeholder="Batch ID will be filled from search" readonly required>
+                            <button type="button" id="fetchAuditedBtn" class="get-location-btn" title="Refresh">
+                                <i class="fas fa-sync"></i>
+                            </button>
+                        </div>
+                        <p id="batchError" class="error-message" style="color: #ef4444; margin-top: 8px; display: none;"></p>
+                    </div>
+
+                    <div id="batchDetails" style="display: none;">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Audited Batch Info</label>
+                                <input type="text" id="auditedInfo" class="form-input" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label>Available Quantity</label>
+                                <input type="text" id="availableQuantity" class="form-input" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label for="processingDate">Processing Date</label>
+                                <input type="date" id="processingDate" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="quantityProcessed">Quantity Processed (kg)</label>
+                                <input type="number" id="quantityProcessed" class="form-input" 
+                                    placeholder="Amount to process" required min="0" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="wastage">Wastage (kg)</label>
+                                <input type="number" id="wastage" class="form-input" 
+                                    placeholder="Amount wasted in processing" required min="0" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="productType">Final Product Type</label>
+                                <input type="text" id="productType" class="form-input" 
+                                    placeholder="e.g., Wheat Flour 10kg, Rice Bag 25kg, Herbal Extract" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expiryDate">Expiry Date</label>
+                                <input type="date" id="expiryDate" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="batchLocation">Processing Location</label>
+                                <input type="text" id="batchLocation" class="form-input" 
+                                    placeholder="Factory/Processing unit location" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="processingNotes">Processing Notes</label>
+                            <textarea id="processingNotes" class="form-input" 
+                                placeholder="Details about processing methods, quality checks, etc."></textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                        <i class="fas fa-cogs"></i>
+                        Process Batch & Generate Product
+                    </button>
+                </form>
+            </section>
+
+            <!-- Product QR Section -->
+            <section class="card" id="productQRSection" style="display:none;">
+                <h3 class="card-header">
+                    <i class="fas fa-qrcode"></i>
+                    Product QR
+                </h3>
+                <div style="padding:16px; text-align:center;">
+                    <p id="productQRTitle" style="margin-bottom:12px;color:#334155;">Product ID:</p>
+                    <img id="productQRImg" alt="Product QR" style="width:180px;height:180px;border-radius:8px;border:1px solid #e2e8f0;" />
+                    <div style="margin-top:12px;">
+                        <button id="downloadProductQRBtn" class="submit-btn" type="button">
+                            <i class="fas fa-download"></i> Download QR
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h3 class="card-header">
+                    <i class="fas fa-history"></i>
+                    Processed Batches
+                </h3>
+                <div id="processedBatches">
+                    <div class="empty-state">
+                        <i class="fas fa-industry"></i>
+                        <p>No batches processed yet</p>
+                        <span>Start processing audited batches</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Get user data using the proper auth system
+            const user = await getCurrentUser();
+            if (user && user.name) {
+                document.querySelector('.user-menu span').textContent = user.name;
+                document.querySelector('.user-avatar').textContent = user.name.substring(0, 2).toUpperCase();
+            }
+
+            // Set current date
+            document.getElementById('processingDate').value = new Date().toISOString().split('T')[0];
+            
+            // Set default expiry (1 year from now)
+            const oneYearFromNow = new Date();
+            oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+            document.getElementById('expiryDate').value = oneYearFromNow.toISOString().split('T')[0];
+
+            await Blockchain.init();
+
+            // Search functionality 
+            const searchBtn = document.getElementById('searchBtn');
+            const searchInput = document.getElementById('searchInput');
+            const batchIdInput = document.getElementById('sourceBatchId');
+            
+            searchBtn.addEventListener('click', async function() {
+                const searchId = searchInput.value.trim();
+                if (!searchId) {
+                    alert('Please enter a Batch ID');
+                    return;
+                }
+                
+                await searchAndDisplayChain(searchId);
+                // Auto-fill batch ID for processing form
+                batchIdInput.value = searchId;
+                fetchBtn.click(); // Trigger batch detail fetch
+            });
+
+            // Enter key support for search
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchBtn.click();
+                }
+            });
+
+            // QR scanner helpers
+            let qrStream = null;
+            function stopScanner() {
+                if (qrStream) {
+                    qrStream.getTracks().forEach(t => t.stop());
+                    qrStream = null;
+                }
+                const s = document.getElementById('qrScannerSection');
+                if (s) s.style.display = 'none';
+            }
+            function setupQRScanner() {
+                const qrScanBtn = document.getElementById('qrScanBtn');
+                const qrScannerSection = document.getElementById('qrScannerSection');
+                const qrVideo = document.getElementById('qrVideo');
+                const stopScanBtn = document.getElementById('stopScanBtn');
+                if (!qrScanBtn) return;
+                qrScanBtn.addEventListener('click', async () => {
+                    if (qrScannerSection.style.display === 'none') {
+                        try {
+                            qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                            qrVideo.srcObject = qrStream;
+                            qrVideo.play();
+                            qrScannerSection.style.display = 'block';
+                            const canvas = document.createElement('canvas');
+                            const context = canvas.getContext('2d');
+                            const scan = () => {
+                                if (qrVideo.readyState === qrVideo.HAVE_ENOUGH_DATA) {
+                                    canvas.height = qrVideo.videoHeight;
+                                    canvas.width = qrVideo.videoWidth;
+                                    context.drawImage(qrVideo, 0, 0, canvas.width, canvas.height);
+                                    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                                    const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
+                                    if (qrCode) {
+                                        let batchId = '';
+                                        if (qrCode.data.includes('#')) batchId = qrCode.data.split('#')[1];
+                                        else if (qrCode.data.includes('BATCH_')) {
+                                            const m = qrCode.data.match(/BATCH_\d+/);
+                                            if (m) batchId = m[0];
+                                        }
+                                        if (batchId) {
+                                            stopScanner();
+                                            searchInput.value = batchId;
+                                            searchBtn.click();
+                                        }
+                                    }
+                                }
+                                if (qrScannerSection.style.display !== 'none') requestAnimationFrame(scan);
+                            };
+                            scan();
+                        } catch (e) {
+                            alert('Camera access denied or not available');
+                        }
+                    }
+                });
+                if (stopScanBtn) stopScanBtn.addEventListener('click', stopScanner);
+            }
+            setupQRScanner();
+
+            // Fetch audited batch details
+            const fetchBtn = document.getElementById('fetchAuditedBtn');
+            const batchDetails = document.getElementById('batchDetails');
+            const batchError = document.getElementById('batchError');
+            const submitBtn = document.getElementById('submitBtn');
+
+            fetchBtn.addEventListener('click', async function() {
+                const batchId = batchIdInput.value.trim();
+                if (!batchId) {
+                    showError('Please enter a batch ID');
+                    return;
+                }
+
+                // Pull collection from-chain
+                let batch;
+                try {
+                    const c = await Blockchain.getCollection(batchId);
+                    if (c && c[5] && BigInt(c[5]) > 0n) {
+                        batch = {
+                            id: c[0],
+                            cropType: c[2],
+                            collectedQuantity: Number(c[3]),
+                            farmer: c[1],
+                            status: c[6] || 'Audited'
+                        };
+                    }
+                } catch (e) { console.warn(e); }
+
+                if (batch) {
+                    // Check if already processed
+                    const processedBatches = JSON.parse(localStorage.getItem('processed_batches') || '[]');
+                    const alreadyProcessed = processedBatches.find(p => p.sourceBatchId === batchId);
+                    
+                    if (alreadyProcessed) {
+                        showError('This batch has already been processed');
+                        return;
+                    }
+
+                    // Check if audited
+                    if (batch.status !== 'Audited') {
+                        showError('This batch has not been audited yet. Only audited batches can be processed.');
+                        return;
+                    }
+
+                    // Populate batch details
+                    document.getElementById('auditedInfo').value = `${batch.cropType} (Farmer: ${batch.farmer})`;
+                    document.getElementById('availableQuantity').value = `${batch.collectedQuantity} kg`;
+                    
+                    batchDetails.style.display = 'block';
+                    batchError.style.display = 'none';
+                    submitBtn.disabled = false;
+                    
+                    fetchBtn.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(() => {
+                        fetchBtn.innerHTML = '<i class="fas fa-sync"></i>';
+                    }, 2000);
+                } else {
+                    showError('Batch not found or not available for processing. Please check the Batch ID.');
+                }
+            });
+
+            function showError(message) {
+                batchError.textContent = message;
+                batchError.style.display = 'block';
+                batchDetails.style.display = 'none';
+                submitBtn.disabled = true;
+            }
+
+            // Form submission
+            const processForm = document.getElementById('processForm');
+            processForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const formData = {
+                    sourceBatchId: batchIdInput.value,
+                    processingDate: document.getElementById('processingDate').value,
+                    quantityProcessed: parseFloat(document.getElementById('quantityProcessed').value),
+                    wastage: parseFloat(document.getElementById('wastage').value),
+                    productType: document.getElementById('productType').value,
+                    expiryDate: document.getElementById('expiryDate').value,
+                    batchLocation: document.getElementById('batchLocation').value,
+                    processingNotes: document.getElementById('processingNotes').value
+                };
+
+                const user = await getCurrentUser();
+                const manufacturerId = user?.actorId || user?.actor_id || user?.name || 'MAN001';
+
+                try {
+                    const result = await Blockchain.createProduct({
+                        batchId: formData.sourceBatchId,
+                        manufacturerId,
+                        productType: formData.productType,
+                        quantityProcessed: formData.quantityProcessed,
+                        expiryDate: formData.expiryDate,
+                        location: formData.batchLocation
+                    });
+
+                    if (result?.productId) {
+                        // Store serial number mapping for search
+                        const serialMapping = JSON.parse(localStorage.getItem('serial_mapping') || '{}');
+                        const serialNumber = result.productId.replace('PROD_', '');
+                        serialMapping[serialNumber] = formData.sourceBatchId;
+                        localStorage.setItem('serial_mapping', JSON.stringify(serialMapping));
+
+                        // Show QR for the product
+                        showProductQR(result.productId);
+                        
+                        // Refresh timeline
+                        await searchAndDisplayChain(formData.sourceBatchId);
+                    }
+
+                    alert('Product created successfully and added to blockchain!');
+                } catch (err) {
+                    console.error(err);
+                    alert(err.message || 'Failed to create product on blockchain');
+                }
+
+                // Reset form
+                processForm.reset();
+                batchDetails.style.display = 'none';
+                submitBtn.disabled = true;
+                document.getElementById('processingDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('expiryDate').value = oneYearFromNow.toISOString().split('T')[0];
+
+                loadStats();
+                loadProcessedBatches();
+            });
+
+            // Load initial data
+            loadStats();
+            loadProcessedBatches();
+        });
+
+        // Search and display chain function
+        async function searchAndDisplayChain(batchId) {
+            const idEl = document.getElementById('chainResultId');
+            const timeline = document.getElementById('chainTimeline');
+            
+            idEl.textContent = `Batch ID: ${batchId}`;
+            timeline.innerHTML = '<div style="text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin" style="font-size:24px;color:#6366f1;"></i><p style="margin-top:12px;color:#64748b;">Loading supply chain...</p></div>';
+
+            try {
+                const logs = await Blockchain.getChainForBatch(batchId);
+                if (!logs || logs.length === 0) {
+                    timeline.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;"><i class="fas fa-exclamation-triangle" style="font-size:48px;margin-bottom:16px;opacity:0.5;"></i><p>No events found for ${batchId}</p></div>`;
+                    return;
+                }
+                
+                renderTimelineWithImages(timeline, logs);
+            } catch (e) {
+                console.error('Search chain error', e);
+                timeline.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;">${e.message || 'Failed to load chain'}</div>`;
+            }
+        }
+
+        // Timeline renderer with images
+        function renderTimelineWithImages(container, logs) {
+            container.innerHTML = '';
+            const eventConfig = {
+                BatchCreated: { icon: '🌾', title: 'Batch Created', color: '#10b981', getDescription: (args) => {
+                    const meta = Blockchain.parseFarmLocationMeta(args.farmLocation || '');
+                    const farmer = meta.farmer || 'Unknown Farmer';
+                    const baseLoc = meta.base || (args.farmLocation || 'Not specified');
+                    let desc = `${args.cropType || 'Unknown crop'} • ${args.quantity || '0'} kg • Location: ${baseLoc} • Farmer: ${farmer}`;
+                    const imageHash = meta.ipfs || args.photoHash;
+                    if (imageHash) {
+                        desc += `<br><div style="margin-top:8px;"><img src="${Blockchain.getImageFromPinata(imageHash)}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #e5e7eb;" onclick="showFullImage('${imageHash}')" title="Click to view full image" /><span style="margin-left:8px;color:#3b82f6;cursor:pointer;" onclick="showFullImage('${imageHash}')"><i class="fas fa-expand"></i> View Full</span></div>`;
+                    }
+                    return desc; 
+                } },
+                CollectionAdded: { icon: '👷', title: 'Collection Added', color: '#3b82f6', getDescription: (args) => `Collected by ${args.collectorId || 'Unknown'} • ${args.quantity || '0'} kg of ${args.cropName || 'Unknown crop'}` },
+                InspectionAdded: { icon: '🕵️', title: 'Quality Inspection', color: '#8b5cf6', getDescription: (args) => `Result: ${args.result || 'Unknown'} • Inspector: ${args.inspectorId || 'Unknown'}${args.notes ? ` • Notes: ${args.notes}` : ''}` },
+                ProductCreated: { icon: '🏭', title: 'Product Manufactured', color: '#f59e0b', getDescription: (args) => `Product: ${args.productType || 'Unknown'} • Processed: ${args.quantityProcessed || '0'} kg • Manufacturer: ${args.manufacturerId || 'Unknown'}` },
+                ProductReceived: { icon: '📦', title: 'Product Received', color: '#06b6d4', getDescription: (args) => `${args.herbType || 'Product'} • ${args.quantity || '0'} kg • Storage: ${args.storageLocation || 'Unknown location'}` },
+                ProductDispatched: { icon: '🚚', title: 'Product Dispatched', color: '#ef4444', getDescription: (args) => `${args.quantityDispatched || args.quantityToDispatch || '0'} kg dispatched to ${args.destination || 'Unknown destination'}` }
+            };
+
+            let html = '';
+            logs.forEach((l, index) => {
+                const name = l.fragment?.name || 'Event';
+                const config = eventConfig[name] || { icon: '⛓️', title: name, color: '#6b7280', getDescription: () => 'Event details' };
+                const description = l.args ? config.getDescription(l.args) : 'No details';
+                const isLast = index === logs.length - 1;
+                const blockInfo = (l.blockNumber !== undefined && l.blockNumber !== null) ? `Block #${Number(l.blockNumber)}` : '';
+                html += `
+                <div style="display:flex; gap:16px; padding-bottom:${isLast ? '0' : '20px'}; position:relative;">
+                    <div style="background:${config.color};color:#fff;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;">${config.icon}</div>
+                    <div style="background:white;padding:12px;border-radius:10px;flex:1;border-left:4px solid ${config.color};">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+                            <h4 style="margin:0;font-weight:600;color:#1f2937;font-size:15px;">${config.title}</h4>
+                            ${blockInfo ? `<span style=\"background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500;\">${blockInfo}</span>` : ''}
+                        </div>
+                        <p style="margin:0;color:#374151;font-size:13px;line-height:1.5;">${description}</p>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // Product QR functions
+        function showProductQR(productId) {
+            document.getElementById('productQRSection').style.display = 'block';
+            document.getElementById('productQRTitle').textContent = `Product ID: ${productId}`;
+            
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`search.html#${productId.replace('PROD_', '')}`)}`;
+            document.getElementById('productQRImg').src = qrUrl;
+            
+            document.getElementById('downloadProductQRBtn').onclick = () => downloadQR(qrUrl, `${productId}_QR.png`);
+        }
+
+        function downloadQR(qrUrl, filename) {
+            const link = document.createElement('a');
+            link.href = qrUrl;
+            link.download = filename;
+            link.click();
+        }
+
+        // Image modal functions
+        function showFullImage(ipfsHash) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); z-index: 10000; display: flex; 
+                align-items: center; justify-content: center; cursor: pointer;
+            `;
+            
+            const img = document.createElement('img');
+            img.src = Blockchain.getImageFromPinata(ipfsHash);
+            img.style.cssText = `
+                max-width: 90%; max-height: 90%; border-radius: 12px; 
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            `;
+            
+            modal.appendChild(img);
+            document.body.appendChild(modal);
+            
+            modal.onclick = () => document.body.removeChild(modal);
+            
+            // Close on Escape key
+            const closeOnEscape = (e) => {
+                if (e.key === 'Escape') {
+                    document.body.removeChild(modal);
+                    document.removeEventListener('keydown', closeOnEscape);
+                }
+            };
+            document.addEventListener('keydown', closeOnEscape);
+        }
+
+        function loadStats() {
+            const processedBatches = JSON.parse(localStorage.getItem('processed_batches') || '[]');
+            
+            const totalProcessed = processedBatches.length;
+            const totalWastage = processedBatches.reduce((sum, batch) => sum + (batch.wastage || 0), 0);
+            const totalProcessedQty = processedBatches.reduce((sum, batch) => sum + (batch.quantityProcessed || 0), 0);
+            const avgWastage = totalProcessedQty > 0 ? ((totalWastage / totalProcessedQty) * 100).toFixed(1) : 0;
+
+            const statNumbers = document.querySelectorAll('.stat-number');
+            if (statNumbers.length >= 4) {
+                statNumbers[0].textContent = totalProcessed;
+                statNumbers[1].textContent = '0'; // In production (placeholder)
+                statNumbers[2].textContent = totalProcessed; // Products created
+                statNumbers[3].textContent = `${avgWastage}%`;
+            }
+        }
+
+        function loadProcessedBatches() {
+            const processedBatches = JSON.parse(localStorage.getItem('processed_batches') || '[]');
+            const container = document.getElementById('processedBatches');
+            
+            if (processedBatches.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-industry"></i>
+                        <p>No batches processed yet</p>
+                        <span>Start processing audited batches</span>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = processedBatches.map(batch => `
+                <div class="batch-item">
+                    <div class="batch-info">
+                        <h4>${batch.sourceBatchId} → ${batch.productType}</h4>
+                        <p>Processed: ${batch.quantityProcessed}kg | Wastage: ${batch.wastage}kg</p>
+                        <small>Date: ${new Date(batch.processingDate).toLocaleDateString()} | Location: ${batch.batchLocation}</small>
+                    </div>
+                    <div class="batch-status status-processed">
+                        Processed
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            logout();
+        });
+    </script>
+                    }
+
+                    // Populate details
+                    document.getElementById('auditedInfo').value = `${batch.cropType} from ${batch.farmer}`;
+                    document.getElementById('availableQuantity').value = batch.collectedQuantity + ' kg';
+                    document.getElementById('quantityProcessed').value = batch.collectedQuantity;
+                    
+                    batchDetails.style.display = 'block';
+                    batchError.style.display = 'none';
+                    submitBtn.disabled = false;
+                    // show inline chain timeline
+                    showChainInline(batchId);
+                    
+                    fetchBtn.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(() => {
+                        fetchBtn.innerHTML = '<i class="fas fa-search"></i>';
+                    }, 2000);
+                } else {
+                    showError('Audited batch not found. Please check the Batch ID or ensure it has been audited.');
+                }
+            });
+
+            function showError(message) {
+                batchError.textContent = message;
+                batchError.style.display = 'block';
+                batchDetails.style.display = 'none';
+                submitBtn.disabled = true;
+            }
+
+            // Calculate wastage percentage when inputs change
+            const quantityInput = document.getElementById('quantityProcessed');
+            const wastageInput = document.getElementById('wastage');
+            
+            function updateWastagePercentage() {
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const wastage = parseFloat(wastageInput.value) || 0;
+                
+                if (quantity > 0) {
+                    const percentage = ((wastage / quantity) * 100).toFixed(1);
+                    wastageInput.title = `${percentage}% wastage`;
+                }
+            }
+
+            quantityInput.addEventListener('input', updateWastagePercentage);
+            wastageInput.addEventListener('input', updateWastagePercentage);
+
+            // Form submission
+            const processForm = document.getElementById('processForm');
+            processForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await Blockchain.init();
+
+                const productId = 'PROD_' + Date.now();
+                const sourceBatchId = batchIdInput.value;
+                const productType = document.getElementById('productType').value;
+                const quantityProcessed = document.getElementById('quantityProcessed').value;
+                const wastage = document.getElementById('wastage').value;
+                const processingDate = Math.floor(new Date(document.getElementById('processingDate').value + 'T00:00:00Z').getTime()/1000);
+                const expiryDate = Math.floor(new Date(document.getElementById('expiryDate').value + 'T00:00:00Z').getTime()/1000);
+                const manufacturerId = 'MAN001'; // TODO map from logged in user
+
+                try {
+                    await Blockchain.createProduct({ productId, sourceBatchId, productType, quantityProcessed, wastage, processingDate, expiryDate, manufacturerId });
+                    alert('Product created on-chain: ' + productId);
+                    // store lightweight history for stats
+                    const processed = JSON.parse(localStorage.getItem('processed_batches') || '[]');
+                    processed.unshift({
+                        id: productId,
+                        sourceBatchId,
+                        productType,
+                        finalQuantity: Number(quantityProcessed) - Number(wastage),
+                        processingDate: new Date(processingDate * 1000).toISOString(),
+                        expiryDate: new Date(expiryDate * 1000).toISOString(),
+                        status: 'Created'
+                    });
+                    localStorage.setItem('processed_batches', JSON.stringify(processed));
+                    // show QR to handoff downstream
+                    showProductQR(productId);
+                } catch (err) {
+                    console.error(err);
+                    alert(err.message || 'Failed to create product on-chain');
+                }
+
+                // Reset form UI only
+                processForm.reset();
+                batchDetails.style.display = 'none';
+                submitBtn.disabled = true;
+                document.getElementById('processingDate').value = new Date().toISOString().split('T')[0];
+                const oneYearFromNow2 = new Date();
+                oneYearFromNow2.setFullYear(oneYearFromNow2.getFullYear() + 1);
+                document.getElementById('expiryDate').value = oneYearFromNow2.toISOString().split('T')[0];
+
+                loadStats();
+                loadProcessedBatches();
+            });
+
+            // Load initial data
+            loadStats();
+            loadProcessedBatches();
+        });
+
+        function loadStats() {
+            const processed = JSON.parse(localStorage.getItem('processed_batches') || '[]');
+            
+            const totalProcessed = processed.length;
+            const inProduction = 0; // For demo purposes
+            const totalProducts = processed.length;
+            
+            // Calculate average wastage
+            let avgWastage = 0;
+            if (processed.length > 0) {
+                const totalWastagePercentage = processed.reduce((sum, batch) => {
+                    const quantity = parseFloat(batch.quantityProcessed);
+                    const wastage = parseFloat(batch.wastage);
+                    return sum + (quantity > 0 ? (wastage / quantity) * 100 : 0);
+                }, 0);
+                avgWastage = (totalWastagePercentage / processed.length).toFixed(1);
+            }
+
+            const statNumbers = document.querySelectorAll('.stat-number');
+            if (statNumbers.length >= 4) {
+                statNumbers[0].textContent = totalProcessed;
+                statNumbers[1].textContent = inProduction;
+                statNumbers[2].textContent = totalProducts;
+                statNumbers[3].textContent = avgWastage + '%';
+            }
+        }
+
+        function loadProcessedBatches() {
+            const processed = JSON.parse(localStorage.getItem('processed_batches') || '[]');
+            const container = document.getElementById('processedBatches');
+            
+            if (processed.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-industry"></i>
+                        <p>No batches processed yet</p>
+                        <span>Start processing audited batches</span>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = processed.map(batch => `
+                <div class="batch-item">
+                    <div class="batch-info">
+                        <h4>${batch.id}</h4>
+                        <p>${batch.productType} - ${batch.finalQuantity}kg (from ${batch.sourceBatchId})</p>
+                        <small>Processed: ${new Date(batch.processingDate).toLocaleDateString()} | Expires: ${new Date(batch.expiryDate).toLocaleDateString()}</small>
+                    </div>
+                    <div class="batch-status status-${batch.status.toLowerCase()}">
+                        ${batch.status}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await signOut();
+            });
+        }
+
+        // ----- Timeline & QR helpers -----
+        async function showChainInline(batchId) {
+            if (!batchId) return;
+            const section = document.getElementById('chainResultsSection');
+            const idEl = document.getElementById('chainResultId');
+            const timeline = document.getElementById('chainTimeline');
+            if (idEl) idEl.textContent = `Batch ID: ${batchId}`;
+            if (timeline) timeline.innerHTML = '<div style="text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin" style="font-size:24px;color:#6366f1;"></i><p style="margin-top:12px;color:#64748b;">Loading supply chain history...</p></div>';
+            section.style.display = 'block';
+            try {
+                const logs = await Blockchain.getChainForBatch(batchId);
+                if (!logs || logs.length === 0) {
+                    timeline.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;"><i class="fas fa-exclamation-triangle" style="font-size:48px;margin-bottom:16px;opacity:0.5;"></i><p style="font-size:16px;margin:0;">No supply chain history found</p><p style="font-size:14px;margin:8px 0 0 0;opacity:0.8;">This batch hasn't been processed through the supply chain yet</p></div>`;
+                    return;
+                }
+                renderChainFromLogs(batchId, logs, timeline);
+            } catch (e) {
+                timeline.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;"><i class="fas fa-exclamation-triangle" style="font-size:48px;margin-bottom:16px;opacity:0.5;"></i><p style="font-size:16px;margin:0;">Error loading supply chain</p><p style="font-size:14px;margin:8px 0 0 0;opacity:0.8;">${e.message || 'Network or contract error'}</p></div>`;
+            }
+        }
+
+        function renderChainFromLogs(batchId, logs, container) {
+            const eventConfig = {
+                BatchCreated: { 
+                    icon: '🌾', 
+                    title: 'Batch Created', 
+                    color: '#10b981',
+                    getDescription: (args) => {
+                        const meta = Blockchain.parseFarmLocationMeta(args.farmLocation || '');
+                        const farmer = meta.farmer || 'Unknown Farmer';
+                        const baseLoc = meta.base || (args.farmLocation || 'Not specified');
+                        let desc = `${args.cropType || 'Unknown crop'} • ${args.quantity || '0'} kg • Location: ${baseLoc} • Farmer: ${farmer}`;
+                        const url = Blockchain.imageUrlFromArgs(args);
+                        if (url) {
+                            desc += ` • <a href="#" onclick="showBatchImage('${args.photoHash}')" style="color: #3b82f6; text-decoration: none;"><i class="fas fa-image"></i> View Image</a>`;
+                        }
+                        return desc;
+                    }
+                },
+                CollectionAdded: { 
+                    icon: '👷', 
+                    title: 'Collection Added', 
+                    color: '#3b82f6',
+                    getDescription: (args) => `Collected by ${args.collectorId || 'Unknown'} • ${args.quantity || '0'} kg of ${args.cropName || 'Unknown crop'}`
+                },
+                InspectionAdded: { 
+                    icon: '🕵️', 
+                    title: 'Quality Inspection', 
+                    color: '#8b5cf6',
+                    getDescription: (args) => `Result: ${args.result || 'Unknown'} • Inspector: ${args.inspectorId || 'Unknown'}${args.notes ? ` • Notes: ${args.notes}` : ''}`
+                },
+                ProductCreated: { 
+                    icon: '🏭', 
+                    title: 'Product Manufactured', 
+                    color: '#f59e0b',
+                    getDescription: (args) => `Product: ${args.productType || 'Unknown'} • Processed: ${args.quantityProcessed || '0'} kg • Manufacturer: ${args.manufacturerId || 'Unknown'}`
+                },
+                ProductReceived: { 
+                    icon: '📦', 
+                    title: 'Product Received', 
+                    color: '#06b6d4',
+                    getDescription: (args) => `${args.herbType || 'Product'} • ${args.quantity || '0'} kg • Storage: ${args.storageLocation || 'Unknown location'}`
+                },
+                ProductDispatched: { 
+                    icon: '🚚', 
+                    title: 'Product Dispatched', 
+                    color: '#ef4444',
+                    getDescription: (args) => `${args.quantityDispatched || args.quantityToDispatch || '0'} kg dispatched to ${args.destination || 'Unknown destination'}`
+                }
+            };
+
+            let html = `<div style="color:#94a3b8;font-size:14px;margin-bottom:16px;padding:12px;background:#f1f5f9;border-radius:8px;">
+                <strong>Supply Chain Journey for ${batchId}</strong><br>
+                <span style="font-size:12px;">${logs.length} events tracked on blockchain</span>
+            </div>`;
+            logs.forEach((l, index) => {
+                const name = l.fragment?.name || 'Event';
+                const config = eventConfig[name] || { icon: '⛓️', title: name, color: '#6b7280', getDescription: () => 'Event details' };
+                const tsRaw = (l.args && (l.args.timestamp ?? l.args.collectionDate ?? l.args.date ?? l.args.processingDate)) ?? null;
+                let when = 'Unknown time';
+                if (tsRaw !== null && tsRaw !== undefined) {
+                    const tsNum = typeof tsRaw === 'bigint' ? Number(tsRaw) : Number(tsRaw);
+                    const ms = tsNum > 1e12 ? tsNum : tsNum * 1000;
+                    if (!Number.isNaN(ms)) {
+                        const d = new Date(ms);
+                        when = d.toLocaleDateString() + ' at ' + d.toLocaleTimeString();
+                    }
+                }
+                const blockInfo = (l.blockNumber !== undefined && l.blockNumber !== null) ? `Block #${Number(l.blockNumber)}` : '';
+                const description = l.args ? config.getDescription(l.args) : 'No details available';
+                const isLast = index === logs.length - 1;
+                html += `
+                <div style="display:flex; gap:16px; padding-bottom:${isLast ? '0' : '20px'}; position:relative;">
+                    <div style="display:flex; flex-direction:column; align-items:center; z-index:2;">
+                        <div style="background:${config.color};color:#fff;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">${config.icon}</div>
+                        ${!isLast ? '<div style="width:3px;height:100%;background:linear-gradient(to bottom, #e2e8f0, #f1f5f9);position:absolute;top:48px;left:22.5px;"></div>' : ''}
+                    </div>
+                    <div style="background:white;padding:16px;border-radius:12px;flex:1;box-shadow:0 1px 3px rgba(0,0,0,0.1);border-left:4px solid ${config.color};">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                            <h4 style="margin:0;font-weight:600;color:#1f2937;font-size:16px;">${config.title}</h4>
+                            ${blockInfo ? `<span style="background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500;">${blockInfo}</span>` : ''}
+                        </div>
+                        <p style="margin:0 0 8px 0;color:#374151;font-size:14px;line-height:1.5;">${description}</p>
+                        <p style="margin:0;color:#9ca3af;font-size:12px;"><i class="fas fa-clock"></i> ${when}</p>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function showBatchImage(photoHash) {
+            if (!photoHash || photoHash === '0x' + '0'.repeat(64)) {
+                alert('No image available for this batch');
+                return;
+            }
+            const urlHash = Blockchain.getOriginalIPFSHash(photoHash);
+            const url = urlHash ? Blockchain.getImageFromPinata(urlHash) : null;
+            if (url) {
+                window.open(url, '_blank');
+            } else {
+                alert('Original IPFS hash not found for this photo');
+            }
+        }
+        window.showBatchImage = showBatchImage;
+
+        function showProductQR(productId) {
+            const sec = document.getElementById('productQRSection');
+            const img = document.getElementById('productQRImg');
+            const title = document.getElementById('productQRTitle');
+            const btn = document.getElementById('downloadProductQRBtn');
+            const url = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent('PRODUCT#'+productId)}`;
+            img.src = url;
+            title.textContent = `Product ID: ${productId}`;
+            sec.style.display = 'block';
+            btn.onclick = async () => {
+                try {
+                    const resp = await fetch(url);
+                    const blob = await resp.blob();
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `${productId}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                    a.remove();
+                } catch {}
+            };
+        }
+    </script>
+</body>
+
+</html>

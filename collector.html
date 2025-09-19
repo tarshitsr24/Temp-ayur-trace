@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collector Dashboard - AyurTrace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="theme.css">
+    <style>
+        .capture-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .capture-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .batch-details-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border-left: 4px solid #10b981;
+        }
+        
+        .add-collection-section {
+            background: #fef7f0;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+
+<body>
+    <!-- Auth Check Script -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="supabase-auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="blockchain.js"></script>
+    <script>
+        // Check authentication
+        async function checkAuth() {
+            const user = await getCurrentUser();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            if (user.role !== 'collector') {
+                window.location.href = 'login.html';
+                return;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', checkAuth);
+    </script>
+
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="index.html" class="logo">
+                    <img src="assets/icons/ayutrace_logo_svg.svg" alt="AyurTrace Logo" style="height: 32px; width: auto;">
+                </a>
+                <div class="nav-links">
+                    <a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a>
+                </div>
+                <div class="user-menu">
+                    <div class="user-avatar">CN</div>
+                    <span>Collector Name</span>
+                    <a href="#" id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i></a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <section class="dashboard-header">
+                <h1>Welcome back!</h1>
+                <p>Search and view batch history, then add collections to the blockchain.</p>
+            </section>
+
+            <!-- Timeline Search Section (Primary) -->
+            <section class="card" style="margin-bottom: 2rem;">
+                <h3 class="card-header">
+                    <i class="fas fa-timeline"></i>
+                    Batch Timeline & Search
+                </h3>
+                <div class="form-group">
+                    <label for="searchBatchInput">Enter Batch ID to view complete supply chain history</label>
+                    <div class="input-group">
+                        <input type="text" id="searchBatchInput" class="form-input" placeholder="Enter Batch ID (e.g., BATCH_1726614123456)">
+                        <button type="button" id="searchBatchBtn" class="get-location-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <button type="button" id="qrScanBtn" class="get-location-btn" style="margin-left: 8px; background: #8b5cf6;">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- QR Scanner (Hidden by default) -->
+                <div id="qrScannerSection" style="display: none; margin-top: 16px; text-align: center;">
+                    <video id="qrVideo" style="width: 100%; max-width: 400px; border-radius: 8px;"></video>
+                    <div style="margin-top: 12px;">
+                        <button type="button" id="stopScanBtn" class="submit-btn" style="background: #ef4444;">
+                            <i class="fas fa-times"></i> Stop Scanner
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Timeline Display -->
+                <div id="chainTimeline" class="relative" style="padding-left: 16px; border-left: 2px solid #e2e8f0; margin-top: 20px;">
+                    <p style="color:#94a3b8;">Search for a Batch ID above to view the complete supply chain history.</p>
+                </div>
+
+                <!-- Action Button to Add Collection -->
+                <div id="timelineActionButton" style="display: none; text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                    <button type="button" id="addCollectionFromTimelineBtn" class="submit-btn" style="background: #f59e0b;">
+                        <i class="fas fa-plus"></i>
+                        Add Collection to This Batch
+                    </button>
+                </div>
+            </section>
+
+            <!-- Add Collection Form (Hidden initially) -->
+            <section class="card hidden" id="addCollectionSection">
+                <h3 class="card-header">
+                    <i class="fas fa-plus-circle"></i>
+                    Add Collection
+                </h3>
+                <div class="add-collection-section">
+                    <form id="collectionForm">
+                        <div class="form-group">
+                            <label>Selected Batch Details</label>
+                            <div id="selectedBatchDisplay" style="background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; color: #475569;">
+                                No batch selected
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="collectorId">Collector ID</label>
+                                <input type="text" id="collectorId" name="collectorId" class="form-input" 
+                                    placeholder="Your Collector ID" required readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="collectionQuantity">Collection Quantity (kg)</label>
+                                <input type="number" id="collectionQuantity" name="collectionQuantity" class="form-input"
+                                    placeholder="Enter quantity collected" required min="1">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="collectionNotes">Collection Notes (Optional)</label>
+                            <textarea id="collectionNotes" name="collectionNotes" class="form-input"
+                                placeholder="Additional notes about the collection..."></textarea>
+                        </div>
+                        
+                        <!-- Hidden fields populated from batch details -->
+                        <input type="hidden" id="selectedBatchId" name="selectedBatchId">
+                        <input type="hidden" id="selectedFarmerId" name="selectedFarmerId">
+                        <input type="hidden" id="selectedCropName" name="selectedCropName">
+                        
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-plus"></i>
+                            Add Collection
+                        </button>
+                        <button type="button" id="cancelCollectionBtn" class="submit-btn" style="background: #6b7280; margin-left: 12px;">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Collection History -->
+            <section class="card">
+                <h3 class="card-header">
+                    <i class="fas fa-history"></i>
+                    Collection History
+                </h3>
+                <div id="collectionHistory">
+                    <div class="empty-state">
+                        <i class="fas fa-boxes"></i>
+                        <p>No collections made yet</p>
+                        <span>Search for a batch and add your first collection</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Image Modal -->
+    <div id="imageModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8);">
+        <div style="position: relative; margin: 5% auto; width: 90%; max-width: 600px; text-align: center;">
+            <span id="closeModal" style="position: absolute; top: 15px; right: 35px; color: white; font-size: 40px; cursor: pointer;">&times;</span>
+            <img id="modalImage" style="width: 100%; max-height: 80vh; object-fit: contain; border-radius: 8px;">
+            <div style="color: white; margin-top: 16px; padding: 16px;">
+                <h3 id="modalTitle">Batch Image</h3>
+                <p id="modalDescription">Loading image...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentBatchDetails = null;
+        let qrStream = null;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Get user data
+            const user = await getCurrentUser();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            if (user && user.name) {
+                document.querySelector('.user-menu span').textContent = user.name;
+                document.querySelector('.user-avatar').textContent = user.name.substring(0, 2).toUpperCase();
+                document.querySelector('.dashboard-header h1').textContent = `Welcome back, ${user.name}!`;
+                // Set collector ID to actorId dynamically
+                const collectorIdField = document.getElementById('collectorId');
+                if (collectorIdField) {
+                    collectorIdField.value = user.actorId || 'COL001';
+                }
+            }
+
+            // Initialize blockchain
+            try {
+                await Blockchain.init();
+                console.log('Blockchain initialized successfully');
+            } catch (error) {
+                console.warn('Failed to initialize blockchain:', error);
+            }
+
+            // QR Scanner functionality
+            setupQRScanner();
+            
+            // Search functionality
+            setupSearchFeatures();
+            
+            // Collection form functionality
+            setupCollectionForm();
+            
+            // Load collection history
+            await loadCollectionHistory();
+            
+            // Image modal setup
+            setupImageModal();
+        });
+
+        // Setup QR Scanner
+        function setupQRScanner() {
+            const qrScanBtn = document.getElementById('qrScanBtn');
+            const qrScannerSection = document.getElementById('qrScannerSection');
+            const qrVideo = document.getElementById('qrVideo');
+            const stopScanBtn = document.getElementById('stopScanBtn');
+            
+            qrScanBtn.addEventListener('click', async function() {
+                if (qrScannerSection.style.display === 'none') {
+                    try {
+                        qrStream = await navigator.mediaDevices.getUserMedia({ 
+                            video: { facingMode: 'environment' } 
+                        });
+                        qrVideo.srcObject = qrStream;
+                        qrVideo.play();
+                        qrScannerSection.style.display = 'block';
+                        
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        
+                        const scanQR = () => {
+                            if (qrVideo.readyState === qrVideo.HAVE_ENOUGH_DATA) {
+                                canvas.height = qrVideo.videoHeight;
+                                canvas.width = qrVideo.videoWidth;
+                                context.drawImage(qrVideo, 0, 0, canvas.width, canvas.height);
+                                
+                                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                                const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
+                                
+                                if (qrCode) {
+                                    let batchId = '';
+                                    if (qrCode.data.includes('#')) {
+                                        batchId = qrCode.data.split('#')[1];
+                                    } else if (qrCode.data.includes('BATCH_')) {
+                                        const match = qrCode.data.match(/BATCH_\d+/);
+                                        if (match) batchId = match[0];
+                                    }
+                                    
+                                    if (batchId) {
+                                        // Stop scanner and search
+                                        stopScanner();
+                                        const searchInput = document.getElementById('searchBatchInput');
+                                        if (searchInput) {
+                                            searchInput.value = batchId;
+                                            searchBatch(batchId);
+                                        }
+                                    }
+                                }
+                            }
+                            if (qrScannerSection.style.display !== 'none') {
+                                requestAnimationFrame(scanQR);
+                            }
+                        };
+                        scanQR();
+                        
+                    } catch (err) {
+                        alert('Camera access denied or not available');
+                        console.error('Camera error:', err);
+                    }
+                }
+            });
+            
+            stopScanBtn.addEventListener('click', stopScanner);
+            
+            function stopScanner() {
+                if (qrStream) {
+                    qrStream.getTracks().forEach(track => track.stop());
+                    qrStream = null;
+                }
+                qrScannerSection.style.display = 'none';
+            }
+        }
+
+        // Setup search features
+        function setupSearchFeatures() {
+            const searchBatchBtn = document.getElementById('searchBatchBtn');
+            const searchBatchInput = document.getElementById('searchBatchInput');
+            
+            searchBatchBtn.addEventListener('click', function() {
+                const batchId = searchBatchInput.value.trim();
+                if (batchId) {
+                    searchBatch(batchId);
+                } else {
+                    alert('Please enter a Batch ID');
+                }
+            });
+            
+            searchBatchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const batchId = searchBatchInput.value.trim();
+                    if (batchId) {
+                        searchBatch(batchId);
+                    }
+                }
+            });
+        }
+
+        // Search batch function - Updated for timeline-first layout
+        async function searchBatch(batchId) {
+            if (!batchId) return;
+            
+            const timeline = document.getElementById('chainTimeline');
+            const actionButton = document.getElementById('timelineActionButton');
+            
+            // Show loading in timeline
+            timeline.innerHTML = '<div style="text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin" style="font-size:24px;color:#6366f1;"></i><p style="margin-top:12px;color:#64748b;">Loading supply chain history...</p></div>';
+            actionButton.style.display = 'none';
+            
+            try {
+                await Blockchain.init();
+                
+                // Get batch details first to validate
+                const details = await Blockchain.getBatchDetails(batchId);
+                
+                if (!details || !details[0]) {
+                    timeline.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;"><i class="fas fa-exclamation-triangle" style="font-size:48px;margin-bottom:16px;opacity:0.5;"></i><p style="font-size:16px;margin:0;">Batch not found</p><p style="font-size:14px;margin:8px 0 0 0;opacity:0.8;">Please check the Batch ID and try again</p></div>';
+                    return;
+                }
+                
+                // Store current batch details
+                currentBatchDetails = {
+                    batchId: details[0],
+                    cropType: details[1],
+                    quantity: details[2],
+                    harvestDate: details[3],
+                    farmLocation: details[4],
+                    photoHash: details[5],
+                    status: details[6],
+                    owner: details[7],
+                    timestamp: details[8]
+                };
+                
+                // Get and display timeline
+                const logs = await Blockchain.getChainForBatch(batchId);
+                
+                if (!logs || logs.length === 0) {
+                    timeline.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;"><i class="fas fa-exclamation-triangle" style="font-size:48px;margin-bottom:16px;opacity:0.5;"></i><p style="font-size:16px;margin:0;">No supply chain history found</p><p style="font-size:14px;margin:8px 0 0 0;opacity:0.8;">This batch hasn\'t been processed through the supply chain yet</p></div>';
+                } else {
+                    renderTimelineWithImages(logs, timeline);
+                }
+                
+                // Show the action button to add collection
+                actionButton.style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error searching batch:', error);
+                timeline.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;"><i class="fas fa-exclamation-triangle" style="font-size:48px;margin-bottom:16px;opacity:0.5;"></i><p style="font-size:16px;margin:0;">Error loading batch</p><p style="font-size:14px;margin:8px 0 0 0;opacity:0.8;">' + (error.message || 'Network or contract error') + '</p></div>';
+                actionButton.style.display = 'none';
+            }
+        }
+
+        // Display batch details
+        function displayBatchDetails(details) {
+            const statusNames = ['Pending', 'InTransit', 'Delivered', 'Processing'];
+            const statusText = statusNames[Number(details.status)] || 'Unknown';
+            const date = details.timestamp ? new Date(Number(details.timestamp) * 1000).toLocaleDateString() : 'Unknown';
+            
+            let imageHtml = '';
+            if (details.photoHash && details.photoHash !== '0x' + '0'.repeat(64)) {
+                imageHtml = `<div style="margin-top:16px;"><a href="#" onclick="showBatchImage('${details.photoHash}')" style="color: #3b82f6; text-decoration: none;"><i class="fas fa-image"></i> View Crop Image</a></div>`;
+            }
+            
+            document.getElementById('batchDetailsContent').innerHTML = `
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;">
+                    <div>
+                        <h4 style="margin:0 0 8px 0;color:#1f2937;font-size:14px;font-weight:600;">Batch ID</h4>
+                        <p style="margin:0;color:#64748b;">${details.batchId}</p>
+                    </div>
+                    <div>
+                        <h4 style="margin:0 0 8px 0;color:#1f2937;font-size:14px;font-weight:600;">Crop Type</h4>
+                        <p style="margin:0;color:#64748b;">${details.cropType}</p>
+                    </div>
+                    <div>
+                        <h4 style="margin:0 0 8px 0;color:#1f2937;font-size:14px;font-weight:600;">Quantity</h4>
+                        <p style="margin:0;color:#64748b;">${details.quantity} kg</p>
+                    </div>
+                    <div>
+                        <h4 style="margin:0 0 8px 0;color:#1f2937;font-size:14px;font-weight:600;">Harvest Date</h4>
+                        <p style="margin:0;color:#64748b;">${details.harvestDate}</p>
+                    </div>
+                    <div>
+                        <h4 style="margin:0 0 8px 0;color:#1f2937;font-size:14px;font-weight:600;">Farm Location</h4>
+                        <p style="margin:0;color:#64748b;">${details.farmLocation}</p>
+                    </div>
+                    <div>
+                        <h4 style="margin:0 0 8px 0;color:#1f2937;font-size:14px;font-weight:600;">Status</h4>
+                        <p style="margin:0;color:#64748b;">${statusText}</p>
+                    </div>
+                    <div>
+                        <h4 style="margin:0 0 8px 0;color:#1f2937;font-size:14px;font-weight:600;">Farmer Address</h4>
+                        <p style="margin:0;color:#64748b;">${details.owner}</p>
+                    </div>
+                    <div>
+                        <h4 style="margin:0 0 8px 0;color:#1f2937;font-size:14px;font-weight:600;">Created Date</h4>
+                        <p style="margin:0;color:#64748b;">${date}</p>
+                    </div>
+                </div>
+                ${imageHtml}
+            `;
+        }
+
+        // Setup collection form
+        // Render timeline with farmer names and images
+        function renderTimelineWithImages(logs, container) {
+            const icon = { 
+                BatchCreated: '🌾', 
+                CollectionAdded: '👷', 
+                InspectionAdded: '🕵️', 
+                ProductCreated: '🏭', 
+                ProductReceived: '📦', 
+                ProductDispatched: '🚚' 
+            };
+            
+            let html = '';
+            logs.forEach(l => {
+                const name = l.fragment?.name || 'Event';
+                const ts = l.args?.timestamp || l.args?.collectionDate || l.args?.date || null;
+                const when = ts ? new Date(Number(ts) * (ts > 1e12 ? 1 : 1000)).toLocaleString() : '';
+                
+                let description = '';
+                if (name === 'BatchCreated' && l.args) {
+                    const meta = Blockchain?.parseFarmLocationMeta ? Blockchain.parseFarmLocationMeta(l.args.farmLocation || '') : {};
+                    const farmer = meta.farmer || 'Unknown Farmer';
+                    const baseLoc = meta.base || (l.args.farmLocation || 'Not specified');
+                    description = `${l.args.cropType} • ${l.args.quantity} kg • Location: ${baseLoc} • Farmer: ${farmer}`;
+                    const imageHash = meta.ipfs || l.args.photoHash;
+                    if (imageHash && Blockchain?.getImageFromPinata) {
+                        description += `<br><div style="margin-top:8px;"><img src="${Blockchain.getImageFromPinata(imageHash)}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #e5e7eb;" onclick="showFullImage('${imageHash}')" title="Click to view full image" /><span style="margin-left:8px;color:#3b82f6;cursor:pointer;" onclick="showFullImage('${imageHash}')"><i class="fas fa-expand"></i> View Full</span></div>`;
+                    }
+                } else {
+                    description = JSON.stringify(l.args, null, 2);
+                }
+                
+                html += `
+                <div class="timeline-item" style="display:flex;gap:16px;padding-bottom:32px;">
+                    <div style="display:flex;flex-direction:column;align-items:center;">
+                        <div style="background:#6366f1;color:white;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;">${icon[name] || '⛓️'}</div>
+                        <div style="width:2px;height:100%;background:#e2e8f0;margin-top:8px;"></div>
+                    </div>
+                    <div style="background:#f8fafc;padding:16px;border-radius:12px;flex:1;">
+                        <p style="font-weight:600;color:#1f2937;margin:0 0 4px 0;">${name}</p>
+                        ${when ? `<p style="font-size:12px;color:#6b7280;margin:0 0 8px 0;">${when}</p>` : ''}
+                        <div style="font-size:12px;color:#4b5563;">${description}</div>
+                    </div>
+                </div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Show full image modal
+        function showFullImage(ipfsHash) {
+            if (!ipfsHash) return;
+            const fullUrl = Blockchain.getImageFromPinata(ipfsHash);
+            
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;';
+            overlay.onclick = (e) => {
+                if (e.target === overlay) overlay.remove();
+            };
+            
+            // Create modal content
+            const modal = document.createElement('div');
+            modal.style.cssText = 'background:white;padding:16px;border-radius:12px;max-width:90%;max-height:90%;overflow:auto;';
+            modal.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <h3 style="margin:0;font-size:18px;font-weight:600;">Image Preview</h3>
+                    <button onclick="this.closest('div[style*=\"position:fixed\"]').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#6b7280;">×</button>
+                </div>
+                <img src="${fullUrl}" style="max-width:100%;height:auto;border-radius:8px;" alt="Full image" />
+            `;
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+        }
+
+        function setupCollectionForm() {
+            const addCollectionFromTimelineBtn = document.getElementById('addCollectionFromTimelineBtn');
+            const addCollectionSection = document.getElementById('addCollectionSection');
+            const collectionForm = document.getElementById('collectionForm');
+            const cancelCollectionBtn = document.getElementById('cancelCollectionBtn');
+            const selectedBatchDisplay = document.getElementById('selectedBatchDisplay');
+            
+            // New timeline button event
+            addCollectionFromTimelineBtn.addEventListener('click', function() {
+                if (currentBatchDetails) {
+                    // Populate hidden fields
+                    document.getElementById('selectedBatchId').value = currentBatchDetails.batchId;
+                    document.getElementById('selectedFarmerId').value = currentBatchDetails.owner;
+                    document.getElementById('selectedCropName').value = currentBatchDetails.cropType;
+                    
+                    // Show batch details in the form
+                    const meta = Blockchain?.parseFarmLocationMeta ? Blockchain.parseFarmLocationMeta(currentBatchDetails.farmLocation || '') : {};
+                    const farmer = meta.farmer || 'Unknown Farmer';
+                    selectedBatchDisplay.innerHTML = `
+                        <strong>Batch:</strong> ${currentBatchDetails.batchId}<br>
+                        <strong>Crop:</strong> ${currentBatchDetails.cropType}<br>
+                        <strong>Farmer:</strong> ${farmer}<br>
+                        <strong>Available Quantity:</strong> ${currentBatchDetails.quantity} kg
+                    `;
+                    
+                    addCollectionSection.classList.remove('hidden');
+                    addCollectionSection.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+            
+            cancelCollectionBtn.addEventListener('click', function() {
+                addCollectionSection.classList.add('hidden');
+                collectionForm.reset();
+                selectedBatchDisplay.innerHTML = 'No batch selected';
+            });
+            
+            collectionForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(collectionForm);
+                const currentActorId = await getCurrentActorId();
+                const collectionData = {
+                    farmerBatchId: formData.get('selectedBatchId'),
+                    farmerId: formData.get('selectedFarmerId'),
+                    cropName: formData.get('selectedCropName'),
+                    quantity: parseFloat(formData.get('collectionQuantity')),
+                    collectorId: currentActorId || formData.get('collectorId') || 'unknown'
+                };
+                
+                try {
+                    const submitBtn = collectionForm.querySelector('button[type="submit"]');
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding Collection...';
+                    submitBtn.disabled = true;
+                    
+                    await Blockchain.addCollection(collectionData);
+                    
+                    // Store in localStorage for history
+                    const collections = JSON.parse(localStorage.getItem('collector_collections') || '[]');
+                    collections.unshift({
+                        ...collectionData,
+                        timestamp: new Date().toISOString(),
+                        notes: formData.get('collectionNotes') || ''
+                    });
+                    localStorage.setItem('collector_collections', JSON.stringify(collections));
+                    
+                    alert('Collection added successfully!');
+                    
+                    // Reset form and hide section
+                    collectionForm.reset();
+                    addCollectionSection.classList.add('hidden');
+                    selectedBatchDisplay.innerHTML = 'No batch selected';
+                    
+                    // Refresh collection history and timeline
+                    await loadCollectionHistory();
+                    if (currentBatchDetails) {
+                        searchBatch(currentBatchDetails.batchId);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error adding collection:', error);
+                    alert('Error adding collection: ' + (error.message || 'Unknown error'));
+                } finally {
+                    const submitBtn = collectionForm.querySelector('button[type="submit"]');
+                    submitBtn.innerHTML = '<i class="fas fa-plus"></i> Add Collection';
+                    submitBtn.disabled = false;
+                }
+            });
+        }
+
+        // Show inline supply chain
+        async function showChainInline(batchId) {
+            if (!batchId) return;
+            
+            const section = document.getElementById('chainResultsSection');
+            const idEl = document.getElementById('chainResultId');
+            const timeline = document.getElementById('chainTimeline');
+            
+            if (idEl) idEl.textContent = `Batch ID: ${batchId}`;
+            if (timeline) timeline.innerHTML = '<div style="text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin" style="font-size:24px;color:#6366f1;"></i><p style="margin-top:12px;color:#64748b;">Loading supply chain history...</p></div>';
+            section.style.display = 'block';
+
+            try {
+                console.time('Chain fetch');
+                const logs = await Blockchain.getChainForBatch(batchId);
+                console.timeEnd('Chain fetch');
+                
+                if (!logs || logs.length === 0) {
+                    timeline.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;"><i class="fas fa-exclamation-triangle" style="font-size:48px;margin-bottom:16px;opacity:0.5;"></i><p style="font-size:16px;margin:0;">No supply chain history found</p><p style="font-size:14px;margin:8px 0 0 0;opacity:0.8;">This batch hasn't been processed through the supply chain yet</p></div>`;
+                    return;
+                }
+                
+                renderChainFromLogs(batchId, logs, timeline);
+            } catch (e) {
+                console.error('Chain fetch error:', e);
+                timeline.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;"><i class="fas fa-exclamation-triangle" style="font-size:48px;margin-bottom:16px;opacity:0.5;"></i><p style="font-size:16px;margin:0;">Error loading supply chain</p><p style="font-size:14px;margin:8px 0 0 0;opacity:0.8;">${e.message || 'Network or contract error'}</p></div>`;
+            }
+        }
+
+        // Render chain timeline
+        function renderChainFromLogs(batchId, logs, container) {
+            const eventConfig = {
+                BatchCreated: { 
+                    icon: '🌾', 
+                    title: 'Batch Created', 
+                    color: '#10b981',
+                    getDescription: (args) => {
+                        const meta = Blockchain.parseFarmLocationMeta(args.farmLocation || '');
+                        const farmer = meta.farmer || 'Unknown Farmer';
+                        const baseLoc = meta.base || (args.farmLocation || 'Not specified');
+                        let desc = `${args.cropType || 'Unknown crop'} • ${args.quantity || '0'} kg • Location: ${baseLoc} • Farmer: ${farmer}`;
+                        const url = Blockchain.imageUrlFromArgs(args);
+                        if (url) {
+                            desc += ` • <a href=\"#\" onclick=\"showBatchImage('${args.photoHash}')\" style=\"color: #3b82f6; text-decoration: none;\"><i class=\"fas fa-image\"></i> View Image</a>`;
+                        }
+                        return desc;
+                    }
+                },
+                CollectionAdded: { 
+                    icon: '👷', 
+                    title: 'Collection Added', 
+                    color: '#3b82f6',
+                    getDescription: (args) => `Collected by ${args.collectorId || 'Unknown'} • ${args.quantity || '0'} kg of ${args.cropName || 'Unknown crop'}`
+                },
+                InspectionAdded: { 
+                    icon: '🕵️', 
+                    title: 'Quality Inspection', 
+                    color: '#8b5cf6',
+                    getDescription: (args) => `Result: ${args.result || 'Unknown'} • Inspector: ${args.inspectorId || 'Unknown'}${args.notes ? ` • Notes: ${args.notes}` : ''}`
+                },
+                ProductCreated: { 
+                    icon: '🏭', 
+                    title: 'Product Manufactured', 
+                    color: '#f59e0b',
+                    getDescription: (args) => `Product: ${args.productType || 'Unknown'} • Processed: ${args.quantityProcessed || '0'} kg • Manufacturer: ${args.manufacturerId || 'Unknown'}`
+                },
+                ProductReceived: { 
+                    icon: '📦', 
+                    title: 'Product Received', 
+                    color: '#06b6d4',
+                    getDescription: (args) => `${args.herbType || 'Product'} • ${args.quantity || '0'} kg • Storage: ${args.storageLocation || 'Unknown location'}`
+                },
+                ProductDispatched: { 
+                    icon: '🚚', 
+                    title: 'Product Dispatched', 
+                    color: '#ef4444',
+                    getDescription: (args) => `${args.quantityDispatched || args.quantityToDispatch || '0'} kg dispatched to ${args.destination || 'Unknown destination'}`
+                }
+            };
+
+            let html = `<div style="color:#94a3b8;font-size:14px;margin-bottom:16px;padding:12px;background:#f1f5f9;border-radius:8px;">
+                <strong>Supply Chain Journey for ${batchId}</strong><br>
+                <span style="font-size:12px;">${logs.length} events tracked on blockchain</span>
+            </div>`;
+            
+            logs.forEach((l, index) => {
+                const name = l.fragment?.name || 'Event';
+                const config = eventConfig[name] || { icon: '⛓️', title: name, color: '#6b7280', getDescription: () => 'Event details' };
+                
+                const tsRaw = (l.args && (l.args.timestamp ?? l.args.collectionDate ?? l.args.date ?? l.args.processingDate)) ?? null;
+                let when = 'Unknown time';
+                if (tsRaw !== null && tsRaw !== undefined) {
+                    const tsNum = typeof tsRaw === 'bigint' ? Number(tsRaw) : Number(tsRaw);
+                    const ms = tsNum > 1e12 ? tsNum : tsNum * 1000;
+                    if (!Number.isNaN(ms)) {
+                        const date = new Date(ms);
+                        when = date.toLocaleDateString() + ' at ' + date.toLocaleTimeString();
+                    }
+                }
+                
+                const blockInfo = (l.blockNumber !== undefined && l.blockNumber !== null) ? `Block #${Number(l.blockNumber)}` : '';
+                const description = l.args ? config.getDescription(l.args) : 'No details available';
+                const isLast = index === logs.length - 1;
+                
+                html += `
+                <div style="display:flex; gap:16px; padding-bottom:${isLast ? '0' : '20px'}; position:relative;">
+                    <div style="display:flex; flex-direction:column; align-items:center; z-index:2;">
+                        <div style="background:${config.color};color:#fff;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">${config.icon}</div>
+                        ${!isLast ? '<div style="width:3px;height:100%;background:linear-gradient(to bottom, #e2e8f0, #f1f5f9);position:absolute;top:48px;left:22.5px;"></div>' : ''}
+                    </div>
+                    <div style="background:white;padding:16px;border-radius:12px;flex:1;box-shadow:0 1px 3px rgba(0,0,0,0.1);border-left:4px solid ${config.color};">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                            <h4 style="margin:0;font-weight:600;color:#1f2937;font-size:16px;">${config.title}</h4>
+                            ${blockInfo ? `<span style="background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500;">${blockInfo}</span>` : ''}
+                        </div>
+                        <p style="margin:0 0 8px 0;color:#374151;font-size:14px;line-height:1.5;">${description}</p>
+                        <p style="margin:0;color:#9ca3af;font-size:12px;"><i class="fas fa-clock"></i> ${when}</p>
+                    </div>
+                </div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Load collection history
+        async function loadCollectionHistory() {
+            const historyContainer = document.getElementById('collectionHistory');
+            
+            const collections = JSON.parse(localStorage.getItem('collector_collections') || '[]');
+            
+            if (collections.length === 0) {
+                historyContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-boxes"></i>
+                        <p>No collections made yet</p>
+                        <span>Search for a batch and add your first collection</span>
+                    </div>
+                `;
+                return;
+            }
+            
+            historyContainer.innerHTML = collections.slice(0, 10).map(collection => `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px;">
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0 0 8px 0; color: #1e293b;">${collection.farmerBatchId}</h4>
+                        <p style="margin: 0 0 4px 0; color: #64748b;">${collection.cropName} - ${collection.quantity}kg</p>
+                        <small style="color: #94a3b8;">Collected: ${new Date(collection.timestamp).toLocaleDateString()}</small>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="background: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; margin-bottom: 4px;">
+                            Collected
+                        </div>
+                        <small style="color: #6b7280;">by ${collection.collectorId}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Setup image modal
+        function setupImageModal() {
+            const imageModal = document.getElementById('imageModal');
+            const closeModal = document.getElementById('closeModal');
+            
+            if (closeModal) {
+                closeModal.addEventListener('click', function() {
+                    imageModal.style.display = 'none';
+                });
+            }
+            
+            if (imageModal) {
+                imageModal.addEventListener('click', function(e) {
+                    if (e.target === imageModal) {
+                        imageModal.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // Show batch image
+        function showBatchImage(photoHash) {
+            if (!photoHash || photoHash === '0x' + '0'.repeat(64)) {
+                alert('No image available for this batch');
+                return;
+            }
+            
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalDesc = document.getElementById('modalDescription');
+            
+            modalTitle.textContent = 'Batch Image';
+            modalDesc.textContent = 'Loading image from IPFS...';
+            modal.style.display = 'block';
+            
+            const originalIPFSHash = Blockchain.getOriginalIPFSHash(photoHash);
+            
+            if (originalIPFSHash) {
+                const imageUrl = Blockchain.getImageFromPinata(originalIPFSHash);
+                modalImg.src = imageUrl;
+                modalDesc.textContent = `Image loaded from IPFS: ${originalIPFSHash}`;
+                
+                modalImg.onload = function() {
+                    modalDesc.textContent = `Image loaded from IPFS: ${originalIPFSHash}`;
+                };
+                
+                modalImg.onerror = function() {
+                    modalImg.src = `https://via.placeholder.com/400x300/10b981/ffffff?text=Image+Not+Found`;
+                    modalDesc.textContent = 'Image could not be loaded from IPFS';
+                };
+            } else {
+                modalImg.src = `https://via.placeholder.com/400x300/10b981/ffffff?text=Batch+Image`;
+                modalDesc.textContent = `Image hash: ${photoHash}. Original IPFS hash not found.`;
+            }
+        }
+
+        // Make functions globally accessible
+        window.showBatchImage = showBatchImage;
+
+        // Logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await signOut();
+            });
+        }
+    </script>
+</body>
+</html>

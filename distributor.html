@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributor Dashboard - AyurTrace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="theme.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="blockchain.js"></script>
+    <script src="supabase-auth.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="index.html" class="logo">
+                    <img src="assets/icons/ayutrace_logo_svg.svg" alt="AyurTrace Logo" style="height: 32px; width: auto;">
+                </a>
+                <div class="nav-links">
+                    <a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a>
+                    <a href="#"><i class="fas fa-history"></i> History</a>
+                </div>
+                <div class="user-menu">
+                    <div class="user-avatar" id="userAvatar">--</div>
+                    <span id="userName">Loading...</span>
+                    <div class="dropdown">
+                        <i class="fas fa-chevron-down"></i>
+                        <div class="dropdown-content">
+                            <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
+                            <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <section class="dashboard-header">
+                <h1>Welcome back!</h1>
+                <p>Manage your distribution operations with ease.</p>
+            </section>
+
+            <!-- Timeline Search Section (Primary) -->
+            <section class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-timeline"></i> Batch Timeline & Search</h2>
+                    <p>Search or scan batch IDs to view complete supply chain history</p>
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <label for="traceBatchIdInput">Enter or Scan Batch ID</label>
+                        <div class="input-group">
+                            <input type="text" id="traceBatchIdInput" class="input-field" placeholder="e.g., BATCH_1726614123456">
+                            <button type="button" id="traceSearchBtn" class="btn-primary">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                            <button type="button" id="qrScanBtn" class="btn-secondary">
+                                <i class="fas fa-camera"></i> Scan QR
+                            </button>
+                        </div>
+                    </div>
+                    <div id="qrScannerSection" style="display:none; margin-top: 20px; text-align:center;" class="scanner-section">
+                        <video id="qrVideo" class="qr-video"></video>
+                        <div style="margin-top:16px;">
+                            <button type="button" id="stopScanBtn" class="btn-danger">
+                                <i class="fas fa-times"></i> Stop Scanner
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Timeline Display -->
+                    <div id="chainTimeline" class="timeline-container">
+                        <div class="empty-state">
+                            <i class="fas fa-search"></i>
+                            <p>Search or scan a Batch ID to view the complete supply chain history</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-box-open"></i> Record Reception</h2>
+                    <p>Record incoming products from manufacturers</p>
+                </div>
+                <div class="card-content">
+                    <form id="receptionForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="receptionBatchId">
+                                    <i class="fas fa-barcode"></i>Batch ID
+                                </label>
+                                <input type="text" id="receptionBatchId" class="input-field" placeholder="Enter Batch ID...">
+                            </div>
+                            <div class="form-group">
+                                <label for="herbType">
+                                    <i class="fas fa-leaf"></i>Herb Type
+                                </label>
+                                <input type="text" id="herbType" class="input-field" placeholder="Enter Herb Type...">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="receptionQuantity">
+                                    <i class="fas fa-weight-hanging"></i>Quantity (kg)
+                                </label>
+                                <input type="number" id="receptionQuantity" class="input-field" placeholder="Enter quantity...">
+                            </div>
+                            <div class="form-group">
+                                <label for="storageLocation">
+                                    <i class="fas fa-map-marker-alt"></i>Storage Location
+                                </label>
+                                <input type="text" id="storageLocation" class="input-field" placeholder="e.g., Warehouse A1">
+                            </div>
+                        </div>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-check-circle"></i> Record Reception
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-truck"></i> Record Dispatch</h2>
+                    <p>Record outgoing products to retailers</p>
+                </div>
+                <div class="card-content">
+                    <form id="dispatchForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dispatchBatchId">
+                                    <i class="fas fa-barcode"></i>Batch ID
+                                </label>
+                                <input type="text" id="dispatchBatchId" class="input-field" placeholder="Enter Batch ID...">
+                            </div>
+                            <div class="form-group">
+                                <label for="dispatchQuantity">
+                                    <i class="fas fa-weight-hanging"></i>Quantity to Dispatch (kg)
+                                </label>
+                                <input type="number" id="dispatchQuantity" class="input-field" placeholder="Enter quantity...">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="destination">
+                                <i class="fas fa-map-marker-alt"></i>Destination
+                            </label>
+                            <input type="text" id="destination" class="input-field" placeholder="Enter destination address...">
+                        </div>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-shipping-fast"></i> Record Dispatch
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+
+
+            <section class="card" id="batchQRSection" style="display:none;">
+                <div class="card-header">
+                    <h2><i class="fas fa-qrcode"></i> Batch QR Code</h2>
+                    <p>QR code for quick batch identification</p>
+                </div>
+                <div class="card-content qr-section">
+                    <p id="batchQRTitle" class="qr-title">Batch:</p>
+                    <div class="qr-container">
+                        <img id="batchQRImg" alt="Batch QR" class="qr-image" />
+                    </div>
+                    <button id="downloadBatchQRBtn" class="btn-secondary" type="button">
+                        <i class="fas fa-download"></i> Download QR Code
+                    </button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="config.js"></script>
+    <script src="supabase-auth.js"></script>
+    <script>
+        // Notification system
+        function showNotification(message, type = 'info') {
+            // Remove existing notifications
+            const existing = document.querySelectorAll('.notification');
+            existing.forEach(n => n.remove());
+            
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 1000;
+                padding: 16px 20px;
+                border-radius: 12px;
+                color: white;
+                font-weight: 600;
+                max-width: 400px;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+                transform: translateX(100%);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            `;
+            
+            const colors = {
+                success: 'background: linear-gradient(135deg, var(--primary), var(--primary-dark));',
+                error: 'background: linear-gradient(135deg, var(--status-red-text), #dc2626);',
+                warning: 'background: linear-gradient(135deg, var(--status-yellow-text), #a16207);',
+                info: 'background: linear-gradient(135deg, var(--primary), var(--primary-dark));'
+            };
+            
+            const icons = {
+                success: 'fas fa-check-circle',
+                error: 'fas fa-exclamation-triangle',
+                warning: 'fas fa-exclamation-circle',
+                info: 'fas fa-info-circle'
+            };
+            
+            notification.style.cssText += colors[type] || colors.info;
+            notification.innerHTML = `
+                <i class="${icons[type] || icons.info}"></i>
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; margin-left: auto; cursor: pointer; font-size: 18px; padding: 0;">×</button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.style.transform = 'translateX(100%)';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            try { await Blockchain.init(); } catch(e) { console.error(e); alert('Blockchain init failed'); }
+
+            const receptionForm = document.getElementById('receptionForm');
+            const dispatchForm = document.getElementById('dispatchForm');
+            const traceInput = document.getElementById('traceBatchIdInput');
+            const traceSearchBtn = document.getElementById('traceSearchBtn');
+
+            receptionForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                
+                // Add loading state
+                submitBtn.classList.add('btn-loading');
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Recording...';
+                submitBtn.disabled = true;
+                
+                const batchId = document.getElementById('receptionBatchId').value.trim();
+                const herbType = document.getElementById('herbType').value.trim();
+                const quantity = parseFloat(document.getElementById('receptionQuantity').value || '0');
+                const storageLocation = document.getElementById('storageLocation').value.trim();
+
+                if (!batchId || !herbType || quantity <= 0 || !storageLocation) {
+                    // Reset button state
+                    submitBtn.classList.remove('btn-loading');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    
+                    showNotification('Please fill all fields correctly.', 'error');
+                    return;
+                }
+
+                try {
+                    await Blockchain.recordReception({ batchId, herbType, quantity, storageLocation });
+                    
+                    // Success state
+                    submitBtn.classList.remove('btn-loading');
+                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Success!';
+                    
+                    showNotification("Reception recorded successfully on blockchain!", 'success');
+                    receptionForm.reset();
+                    
+                    // refresh timeline if active
+                    if (batchId) {
+                        showChainInline(batchId);
+                        showBatchQR(batchId);
+                    }
+                    
+                    // Reset button after delay
+                    setTimeout(() => {
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }, 2000);
+                    
+                } catch (error) {
+                    console.error("Error recording reception:", error);
+                    
+                    // Error state
+                    submitBtn.classList.remove('btn-loading');
+                    submitBtn.innerHTML = '<i class="fas fa-times"></i> Failed';
+                    
+                    showNotification("Failed to record reception. Please try again.", 'error');
+                    
+                    // Reset button after delay
+                    setTimeout(() => {
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }, 2000);
+                }
+            });
+
+            dispatchForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                
+                // Add loading state
+                submitBtn.classList.add('btn-loading');
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Recording...';
+                submitBtn.disabled = true;
+                
+                const batchId = document.getElementById('dispatchBatchId').value.trim();
+                const quantity = parseFloat(document.getElementById('dispatchQuantity').value || '0');
+                const destination = document.getElementById('destination').value.trim();
+
+                if (!batchId || quantity <= 0 || !destination) {
+                    // Reset button state
+                    submitBtn.classList.remove('btn-loading');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    
+                    showNotification('Please fill all fields correctly.', 'error');
+                    return;
+                }
+
+                try {
+                    await Blockchain.recordDispatch({ batchId, quantityToDispatch: quantity, destination });
+                    
+                    // Success state
+                    submitBtn.classList.remove('btn-loading');
+                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Success!';
+                    
+                    showNotification("Dispatch recorded successfully on blockchain!", 'success');
+                    dispatchForm.reset();
+                    
+                    if (batchId) {
+                        showChainInline(batchId);
+                        showBatchQR(batchId);
+                    }
+                    
+                    // Reset button after delay
+                    setTimeout(() => {
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }, 2000);
+                    
+                } catch (error) {
+                    console.error("Error recording dispatch:", error);
+                    
+                    // Error state
+                    submitBtn.classList.remove('btn-loading');
+                    submitBtn.innerHTML = '<i class="fas fa-times"></i> Failed';
+                    
+                    showNotification("Failed to record dispatch. Please try again.", 'error');
+                    
+                    // Reset button after delay
+                    setTimeout(() => {
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }, 2000);
+                }
+            });
+
+            // Search actions
+            function applyBatchIdToForms(batchId) {
+                const r = document.getElementById('receptionBatchId');
+                const d = document.getElementById('dispatchBatchId');
+                if (r) r.value = batchId;
+                if (d) d.value = batchId;
+            }
+
+            async function handleSearch(batchId) {
+                if (!batchId) return;
+                
+                const searchBtn = document.getElementById('traceSearchBtn');
+                const originalText = searchBtn.innerHTML;
+                
+                // Add loading state to search button
+                searchBtn.classList.add('btn-loading');
+                searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+                searchBtn.disabled = true;
+                
+                try {
+                    applyBatchIdToForms(batchId);
+                    await showChainInline(batchId);
+                    showBatchQR(batchId);
+                    
+                    // Success state
+                    searchBtn.classList.remove('btn-loading');
+                    searchBtn.innerHTML = '<i class="fas fa-check"></i> Found';
+                    
+                    setTimeout(() => {
+                        searchBtn.innerHTML = originalText;
+                        searchBtn.disabled = false;
+                    }, 2000);
+                    
+                } catch (error) {
+                    // Error state
+                    searchBtn.classList.remove('btn-loading');
+                    searchBtn.innerHTML = '<i class="fas fa-times"></i> Error';
+                    
+                    showNotification('Failed to load batch timeline', 'error');
+                    
+                    setTimeout(() => {
+                        searchBtn.innerHTML = originalText;
+                        searchBtn.disabled = false;
+                    }, 2000);
+                }
+            }
+
+            if (traceSearchBtn) {
+                traceSearchBtn.addEventListener('click', () => handleSearch(traceInput.value.trim()));
+            }
+            if (traceInput) {
+                traceInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') handleSearch(traceInput.value.trim());
+                });
+            }
+
+            // QR scanner setup
+            let qrStream = null;
+            function stopScanner() {
+                if (qrStream) {
+                    qrStream.getTracks().forEach(t => t.stop());
+                    qrStream = null;
+                }
+                const s = document.getElementById('qrScannerSection');
+                if (s) s.style.display = 'none';
+            }
+            function setupQRScanner() {
+                const btn = document.getElementById('qrScanBtn');
+                const section = document.getElementById('qrScannerSection');
+                const video = document.getElementById('qrVideo');
+                const stopBtn = document.getElementById('stopScanBtn');
+                if (!btn) return;
+                btn.addEventListener('click', async () => {
+                    if (section.style.display === 'none') {
+                        try {
+                            qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                            video.srcObject = qrStream;
+                            video.play();
+                            section.style.display = 'block';
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            const scan = () => {
+                                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                                    canvas.height = video.videoHeight;
+                                    canvas.width = video.videoWidth;
+                                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                                    const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
+                                    if (qrCode) {
+                                        let batchId = '';
+                                        if (qrCode.data.includes('#')) batchId = qrCode.data.split('#')[1];
+                                        else if (qrCode.data.includes('BATCH_')) {
+                                            const m = qrCode.data.match(/BATCH_\d+/);
+                                            if (m) batchId = m[0];
+                                        }
+                                        if (batchId) {
+                                            stopScanner();
+                                            if (traceInput) traceInput.value = batchId;
+                                            handleSearch(batchId);
+                                        }
+                                    }
+                                }
+                                if (section.style.display !== 'none') requestAnimationFrame(scan);
+                            };
+                            scan();
+                        } catch (e) {
+                            alert('Camera access denied or not available');
+                        }
+                    }
+                });
+                if (stopBtn) stopBtn.addEventListener('click', stopScanner);
+            }
+            setupQRScanner();
+        });
+
+        // Authentication and user management
+        async function initUserSession() {
+            const user = await getCurrentUser();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // Update user display
+            const userAvatar = document.getElementById('userAvatar');
+            const userName = document.getElementById('userName');
+            
+            if (userAvatar && userName) {
+                userAvatar.textContent = user.name ? user.name.substring(0, 2).toUpperCase() : user.actorId.substring(0, 2).toUpperCase();
+                userName.textContent = user.name || user.actorId;
+            }
+        }
+
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await signOut();
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initUserSession();
+        });
+
+        // ----- Timeline renderer & QR -----
+        async function showChainInline(batchId) {
+            if (!batchId) return;
+            const section = document.getElementById('chainResultsSection');
+            const idEl = document.getElementById('chainResultId');
+            const timeline = document.getElementById('chainTimeline');
+            if (idEl) idEl.textContent = `Batch ID: ${batchId}`;
+            if (timeline) timeline.innerHTML = '<div style="text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin" style="font-size:24px;color:#6366f1;"></i><p style="margin-top:12px;color:#64748b;">Loading supply chain history...</p></div>';
+            section.style.display = 'block';
+            try {
+                const logs = await Blockchain.getChainForBatch(batchId);
+                if (!logs || logs.length === 0) {
+                    timeline.innerHTML = `<div style=\"text-align:center;padding:40px;color:#ef4444;\"><i class=\"fas fa-exclamation-triangle\" style=\"font-size:48px;margin-bottom:16px;opacity:0.5;\"></i><p style=\"font-size:16px;margin:0;\">No supply chain history found</p><p style=\"font-size:14px;margin:8px 0 0 0;opacity:0.8;\">This batch hasn't been processed through the supply chain yet</p></div>`;
+                    return;
+                }
+                renderChainFromLogs(batchId, logs, timeline);
+            } catch (e) {
+                timeline.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;"><i class="fas fa-exclamation-triangle" style="font-size:48px;margin-bottom:16px;opacity:0.5;"></i><p style="font-size:16px;margin:0;">Error loading supply chain</p><p style="font-size:14px;margin:8px 0 0 0;opacity:0.8;">${e.message || 'Network or contract error'} </p></div>`;
+            }
+        }
+
+        function renderChainFromLogs(batchId, logs, container) {
+            const icon = { 
+                BatchCreated: '🌾', 
+                CollectionAdded: '👷', 
+                InspectionAdded: '🕵️', 
+                ProductCreated: '🏭', 
+                ProductReceived: '📦', 
+                ProductDispatched: '🚚' 
+            };
+            
+            let html = '';
+            logs.forEach(l => {
+                const name = l.fragment?.name || 'Event';
+                const ts = l.args?.timestamp || l.args?.collectionDate || l.args?.date || null;
+                const when = ts ? new Date(Number(ts) * (ts > 1e12 ? 1 : 1000)).toLocaleString() : '';
+                
+                let description = '';
+                if (name === 'BatchCreated' && l.args) {
+                    const meta = Blockchain?.parseFarmLocationMeta ? Blockchain.parseFarmLocationMeta(l.args.farmLocation || '') : {};
+                    const farmer = meta.farmer || 'Unknown Farmer';
+                    const baseLoc = meta.base || (l.args.farmLocation || 'Not specified');
+                    description = `${l.args.cropType} • ${l.args.quantity} kg • Location: ${baseLoc} • Farmer: ${farmer}`;
+                    const imageHash = meta.ipfs || l.args.photoHash;
+                    if (imageHash && Blockchain?.getImageFromPinata) {
+                        description += `<br><div style="margin-top:8px;"><img src="${Blockchain.getImageFromPinata(imageHash)}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #e5e7eb;" onclick="showFullImage('${imageHash}')" title="Click to view full image" /><span style="margin-left:8px;color:#3b82f6;cursor:pointer;" onclick="showFullImage('${imageHash}')"><i class="fas fa-expand"></i> View Full</span></div>`;
+                    }
+                } else {
+                    description = JSON.stringify(l.args, null, 2);
+                }
+                
+                html += `
+                <div class="timeline-item" style="display:flex;gap:16px;padding-bottom:32px;">
+                    <div style="display:flex;flex-direction:column;align-items:center;">
+                        <div style="background:#6366f1;color:white;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;">${icon[name] || '⛓️'}</div>
+                        <div style="width:2px;height:100%;background:#e2e8f0;margin-top:8px;"></div>
+                    </div>
+                    <div style="background:#f8fafc;padding:16px;border-radius:12px;flex:1;">
+                        <p style="font-weight:600;color:#1f2937;margin:0 0 4px 0;">${name}</p>
+                        ${when ? `<p style="font-size:12px;color:#6b7280;margin:0 0 8px 0;">${when}</p>` : ''}
+                        <div style="font-size:12px;color:#4b5563;">${description}</div>
+                    </div>
+                </div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Show full image modal
+        function showFullImage(ipfsHash) {
+            if (!ipfsHash) return;
+            const fullUrl = Blockchain.getImageFromPinata(ipfsHash);
+            
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;';
+            overlay.onclick = (e) => {
+                if (e.target === overlay) overlay.remove();
+            };
+            
+            // Create modal content
+            const modal = document.createElement('div');
+            modal.style.cssText = 'background:white;padding:16px;border-radius:12px;max-width:90%;max-height:90%;overflow:auto;';
+            modal.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <h3 style="margin:0;font-size:18px;font-weight:600;">Image Preview</h3>
+                    <button onclick="this.closest('div[style*=\"position:fixed\"]').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#6b7280;">×</button>
+                </div>
+                <img src="${fullUrl}" style="max-width:100%;height:auto;border-radius:8px;" alt="Full image" />
+            `;
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+        }
+
+        function showBatchImage(photoHash) {
+            if (!photoHash || photoHash === '0x' + '0'.repeat(64)) {
+                alert('No image available for this batch');
+                return;
+            }
+            const urlHash = Blockchain.getOriginalIPFSHash(photoHash);
+            const url = urlHash ? Blockchain.getImageFromPinata(urlHash) : null;
+            if (url) {
+                window.open(url, '_blank');
+            } else {
+                alert('Original IPFS hash not found for this photo');
+            }
+        }
+        window.showBatchImage = showBatchImage;
+
+        function showBatchQR(batchId) {
+            const sec = document.getElementById('batchQRSection');
+            const img = document.getElementById('batchQRImg');
+            const title = document.getElementById('batchQRTitle');
+            const btn = document.getElementById('downloadBatchQRBtn');
+        const url = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent('BATCH#'+batchId)}`;
+            img.src = url;
+        title.textContent = `Batch ID: ${batchId}`;
+            sec.style.display = 'block';
+            btn.onclick = async () => {
+                try {
+                    const resp = await fetch(url);
+                    const blob = await resp.blob();
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+            a.download = `${batchId}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                    a.remove();
+                } catch {}
+            };
+        }
+    </script>
+</body>
+</html>

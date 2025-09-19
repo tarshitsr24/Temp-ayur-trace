@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Create Batch Button</title>
+    <link rel="stylesheet" href="theme.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <main class="main-content">
+            <div class="dashboard-header">
+                <h1>Test Create Batch Button</h1>
+                <button class="btn btn-primary" id="showCreateBatchFormBtn">
+                    <i class="fas fa-plus"></i>
+                    Create New Batch
+                </button>
+            </div>
+
+            <section class="create-batch-section" id="createBatchSection" style="display: none;">
+                <div class="form-card">
+                    <h3>Create New Batch</h3>
+                    <p>This section should toggle when you click the button!</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Test page loaded');
+            
+            const showFormBtn = document.getElementById('showCreateBatchFormBtn');
+            const createBatchSection = document.getElementById('createBatchSection');
+            
+            console.log('Button:', showFormBtn);
+            console.log('Section:', createBatchSection);
+            
+            if (showFormBtn && createBatchSection) {
+                showFormBtn.addEventListener('click', function() {
+                    console.log('🖱️ Button clicked!');
+                    const currentDisplay = createBatchSection.style.display;
+                    console.log('Current display:', currentDisplay);
+                    
+                    if (currentDisplay === 'none' || currentDisplay === '') {
+                        createBatchSection.style.display = 'block';
+                        console.log('✅ Section shown');
+                    } else {
+                        createBatchSection.style.display = 'none';
+                        console.log('❌ Section hidden');
+                    }
+                });
+                console.log('✅ Event listener added successfully');
+            } else {
+                console.error('❌ Button or section not found');
+            }
+        });
+    </script>
+</body>
+</html>

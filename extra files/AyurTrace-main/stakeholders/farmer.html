@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer Dashboard - AyuTrace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --primary-light: #A7F3D0;
+            --secondary: #F59E0B;
+            --background: #F8FAFC;
+            --surface: #FFFFFF;
+            --surface-hover: #F1F5F9;
+            --text-primary: #1F2937;
+            --text-secondary: #6B7280;
+            --text-muted: #9CA3AF;
+            --border: #E5E7EB;
+            --border-light: #F3F4F6;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --info: #3B82F6;
+            --danger: #EF4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Enhanced Navigation */
+        .navbar {
+            background: var(--surface);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .navbar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .logo i {
+            font-size: 32px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: var(--surface-hover);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .user-menu:hover {
+            background: var(--border-light);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 32px 0;
+        }
+
+        /* Enhanced Welcome Section */
+        .welcome-section {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: var(--radius);
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            transform: translate(50%, -50%);
+        }
+
+        .welcome-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-text h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .welcome-text p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .create-batch-btn {
+            background: white;
+            color: var(--primary);
+            border: none;
+            padding: 16px 32px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .create-batch-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Enhanced Stats Grid */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            padding: 32px 24px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-light);
+        }
+
+        .stat-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .stat-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+        }
+
+        .stat-icon.total { background: linear-gradient(135deg, var(--info), #2563EB); }
+        .stat-icon.transit { background: linear-gradient(135deg, var(--warning), #D97706); }
+        .stat-icon.delivered { background: linear-gradient(135deg, var(--success), var(--primary-dark)); }
+        .stat-icon.processing { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
+
+        .stat-info {
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Enhanced Card Styling */
+        .card {
+            background: var(--surface);
+            padding: 32px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 32px;
+            border: 1px solid var(--border);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border-light);
+        }
+
+        .card h2 {
+            color: var(--text-primary);
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Enhanced Form Styling */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            transition: all 0.2s ease;
+            background: var(--surface);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Enhanced QR Code Section */
+        .qr-code-section {
+            background: linear-gradient(135deg, var(--primary-light), #DCFCE7);
+            padding: 40px;
+            border-radius: var(--radius);
+            text-align: center;
+            margin-top: 32px;
+            border: 2px dashed var(--primary);
+            display: none;
+        }
+
+        .qr-code-section h3 {
+            color: var(--primary-dark);
+            font-size: 24px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .qr-code-section img {
+            max-width: 200px;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow);
+            margin: 20px 0;
+        }
+
+        /* Geo-tagged Photo Upload */
+        .photo-upload-section {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .photo-upload-section label {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .photo-upload-input {
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .photo-upload-input:hover {
+            border-color: var(--primary-light);
+        }
+
+        .photo-preview-container {
+            margin-top: 24px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            box-shadow: var(--shadow-sm);
+            display: none; /* Hidden by default */
+            position: relative; /* For overlay positioning */
+            overflow: hidden; /* Ensure overlay stays within bounds */
+        }
+
+        .photo-preview-container img {
+            max-width: 100%;
+            height: auto;
+            display: block; /* Remove extra space below image */
+        }
+
+        .photo-metadata-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.6); /* Semi-transparent black background */
+            color: white;
+            padding: 10px 15px;
+            font-size: 13px;
+            text-align: left;
+            display: none; /* Hidden by default */
+            box-sizing: border-box;
+        }
+
+        .photo-metadata-overlay p {
+            margin: 2px 0;
+            line-height: 1.4;
+        }
+
+        .photo-metadata-overlay strong {
+            color: white;
+            font-weight: 500;
+        }
+
+        .location-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .location-input-group .form-input {
+            flex-grow: 1;
+        }
+
+        .get-location-btn {
+            background: var(--text-secondary);
+            color: var(--white);
+            border: none;
+            padding: 14px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .get-location-btn:hover {
+            background: #5a6268;
+        }
+
+        /* Enhanced Batch Cards */
+        .batch-history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .batch-card {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .batch-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-light);
+        }
+
+        .batch-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary);
+        }
+
+        .batch-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .batch-crop {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .crop-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--primary-light);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--primary-dark);
+        }
+
+        .crop-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .batch-details {
+            margin-bottom: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Enhanced Status Badges */
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status.pending {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .status.in-transit {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+
+        .status.delivered {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .status.processing {
+            background: #E0E7FF;
+            color: #5B21B6;
+        }
+
+        /* Search Enhancement */
+        .search-container {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            border: 2px solid var(--border);
+            border-radius: 50px;
+            font-size: 16px;
+            background: var(--surface);
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 16px;
+            }
+
+            .navbar-content {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .nav-links {
+                gap: 16px;
+            }
+
+            .welcome-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .welcome-text h1 {
+                font-size: 28px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .batch-history-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.3/dist/web3.min.js"></script>
+    <link rel="stylesheet" href="../theme.css">
+    <script src="../config.js"></script>
+</head>
+<body>
+        <script src="../supabase-auth.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="#" class="logo">
+                    <i class="fas fa-seedling"></i>
+                    AyuTrace
+                </a>
+                <div class="nav-links">
+                    <a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a>
+                    <a href="#"><i class="fas fa-chart-line"></i> Analytics</a>
+                    <a href="#"><i class="fas fa-cog"></i> Settings</a>
+                </div>
+                <div class="user-menu" id="userMenu">
+                    <div class="user-avatar" id="userAvatar"></div>
+                    <span id="userName"></span>
+                    <i class="fas fa-chevron-down"></i>
+                    <div class="dropdown-menu" id="dropdownMenu" style="display: none; position: absolute; background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow); padding: 10px; right: 0; top: 60px;">
+                        <button id="logoutBtn" style="width: 100%; padding: 8px; text-align: left; background: none; border: none; cursor: pointer; hover: background-color: var(--surface-hover);">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <section class="welcome-section">
+                <div class="welcome-content">
+                    <div class="welcome-text">
+                        <h1 id="welcomeMessage">Welcome back, John!</h1>
+                        <p>Manage your supply chain operations with ease</p>
+                    </div>
+                    <button class="create-batch-btn" id="showCreateBatchFormBtn">
+                        <i class="fas fa-plus"></i>
+                        Create New Batch
+                    </button>
+                </div>
+            </section>
+
+            <section class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon total">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-number">4</div>
+                            <div class="stat-label">Total Batches</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon transit">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-number">1</div>
+                            <div class="stat-label">In Transit</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon delivered">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-number">1</div>
+                            <div class="stat-label">Delivered</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon processing">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-number">1</div>
+                            <div class="stat-label">Processing</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card" id="createBatchSection" style="display: none;">
+                <div class="card-header">
+                    <h2>
+                        <i class="fas fa-plus-circle"></i>
+                        Create New Batch
+                    </h2>
+                </div>
+                <form id="newBatchForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="cropType">Crop Type</label>
+                            <select id="cropType" name="cropType" class="form-input" required>
+                                <option value="">Select Crop</option>
+                                <option value="Rice">Rice</option>
+                                <option value="Wheat">Wheat</option>
+                                <option value="Cotton">Cotton</option>
+                                <option value="Corn">Corn</option>
+                                <option value="Soybean">Soybean</option>
+                                <option value="Ashwagandha Powder">Ashwagandha Powder</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="quantity">Quantity (kg)</label>
+                            <input type="number" id="quantity" name="quantity" class="form-input" placeholder="e.g., 100" required min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="harvestDate">Harvest Date</label>
+                            <input type="date" id="harvestDate" name="harvestDate" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="farmLocation">Farm Location</label>
+                            <div class="location-input-group">
+                                <input type="text" id="farmLocation" name="farmLocation" class="form-input" placeholder="Village name or GPS coordinates" required>
+                                <button type="button" id="getLocationBtn" class="get-location-btn">
+                                    <i class="fas fa-map-marker-alt"></i> Get Location
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="photo-upload-section">
+                        <label for="geoTaggedPhoto">Upload Geo-tagged Photo (Optional)</label>
+                        <input type="file" id="geoTaggedPhoto" name="geoTaggedPhoto" accept="image/*" class="photo-upload-input">
+                        <div id="photoPreviewContainer" class="photo-preview-container">
+                            <img id="photoPreview" src="" alt="Photo Preview" style="display: none;">
+                            <div id="photoMetadataOverlay" class="photo-metadata-overlay" style="display: none;">
+                                <p><strong>Date:</strong> <span id="photoDate"></span></p>
+                                <p><strong>Time:</strong> <span id="photoTime"></span></p>
+                                <p><strong>Location:</strong> <span id="photoLocation"></span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-qrcode"></i>
+                            Generate Batch & QR Code
+                        </button>
+                    </div>
+                </form>
+
+                <div id="qrCodeOutput" class="qr-code-section">
+                    <h3>
+                        <i class="fas fa-check-circle"></i>
+                        Batch Created Successfully!
+                    </h3>
+                    <p><strong>Batch ID:</strong> <span id="generatedBatchId"></span></p>
+                    <img id="generatedQrCode" src="" alt="QR Code">
+                    <p>Scan this QR code to track your batch</p>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header">
+                    <h2>
+                        <i class="fas fa-history"></i>
+                        Your Batches
+                    </h2>
+                </div>
+                <div class="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchBatch" class="search-input" placeholder="Search batches by crop, ID, or status...">
+                </div>
+                <div class="batch-history-grid" id="batchHistoryGrid">
+                    <div class="batch-card">
+                        <div class="batch-header">
+                            <div class="batch-crop">
+                                <div class="crop-icon"><i class="fas fa-leaf"></i></div>
+                                <div class="crop-name">Ashwagandha Powder</div>
+                            </div>
+                            <span class="status delivered">
+                                <i class="fas fa-check"></i>
+                                Delivered
+                            </span>
+                        </div>
+                        <div class="batch-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Batch ID</span>
+                                <span class="detail-value">AYR-2024-001</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Quantity</span>
+                                <span class="detail-value">500kg</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Created</span>
+                                <span class="detail-value">2 days ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="batch-card">
+                        <div class="batch-header">
+                            <div class="batch-crop">
+                                <div class="crop-icon"><i class="fas fa-seedling"></i></div>
+                                <div class="crop-name">Rice</div>
+                            </div>
+                            <span class="status in-transit">
+                                <i class="fas fa-truck"></i>
+                                In Transit
+                            </span>
+                        </div>
+                        <div class="batch-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Batch ID</span>
+                                <span class="detail-value">FR123-20250908</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Quantity</span>
+                                <span class="detail-value">100kg</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Created</span>
+                                <span class="detail-value">1 week ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // Load supabase-auth.js as a module to ensure window.signIn and window.signOut are available
+        // import '../supabase-auth.js'; // This line is commented out because it's loaded as a script
+
+        const SUPABASE_URL = 'https://zanejoswscmmppiuifso.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbmVqb3N3c2NtbXBwaXVpZnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxMzE1MjYsImV4cCI6MjA3MzcwNzUyNn0.0iW4ap4gNnF1SQkM8eFDA14ukFuuZeuCmvrMxsNxo_4';
+        const supabase = supabase_js.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Import configuration from config.js
+        // const config = window.config; // config.js is loaded as a separate script
+        const web3 = new Web3(new Web3.providers.HttpProvider(window.config.GANACHE_URL));
+
+        // IMPORTANT: Replace 'your_private_key_here' in config.js with a private key from Ganache
+        const PRIVATE_KEY = window.config.PRIVATE_KEY; 
+        const account = web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY);
+        web3.eth.defaultAccount = account.address;
+
+        const FARMER_DASHBOARD_ADDRESS = window.config.CONTRACT_ADDRESSES.FarmerDashboard;
+        const FARMER_DASHBOARD_ABI = window.config.CONTRACT_ABIS.FarmerDashboard;;
+        const farmerDashboard = new web3.eth.Contract(FARMER_DASHBOARD_ABI, FARMER_DASHBOARD_ADDRESS);
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const userMenu = document.getElementById('userMenu');
+            const dropdownMenu = document.getElementById('dropdownMenu');
+            const userAvatar = document.getElementById('userAvatar');
+            const userNameSpan = document.getElementById('userName');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            // Check for logged in user from sessionStorage
+            const currentUserKey = sessionStorage.getItem('ayurtrace_currentUserKey');
+            let currentUser = null;
+
+            if (currentUserKey) {
+                try {
+                    currentUser = JSON.parse(localStorage.getItem(currentUserKey));
+                } catch (e) {
+                    console.error("Error parsing current user from localStorage:", e);
+                    sessionStorage.removeItem('ayurtrace_currentUserKey'); // Clear invalid key
+                }
+            }
+
+            if (!currentUser) {
+                // No logged-in user, redirect to login page
+                window.location.href = '../login.html';
+                return; // Stop further execution
+            }
+
+            // Update UI with logged-in user's information
+            userNameSpan.textContent = currentUser.name || currentUser.actorId;
+            userAvatar.textContent = (currentUser.name ? currentUser.name.charAt(0) : currentUser.actorId.charAt(0)).toUpperCase();
+            welcomeMessage.textContent = `Welcome back, ${currentUser.name || currentUser.actorId}!`;
+
+            // Toggle dropdown menu
+            userMenu.addEventListener('click', function(event) {
+                dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
+                event.stopPropagation(); // Prevent click from closing immediately
+            });
+
+            // Close dropdown if clicked outside
+            document.addEventListener('click', function(event) {
+                if (!userMenu.contains(event.target)) {
+                    dropdownMenu.style.display = 'none';
+                }
+            });
+
+            // Logout functionality
+            logoutBtn.addEventListener('click', function() {
+                window.signOut(); // Call the global signOut function
+            });
+
+            // Load batch history (only if user is logged in)
+            async function loadBatchHistory() {
+                // ... (existing loadBatchHistory function)
+            }
+
+            loadBatchHistory(); // Call loadBatchHistory now that user is confirmed
+        });
+            const newBatchForm = document.getElementById('newBatchForm');
+            const qrCodeOutput = document.getElementById('qrCodeOutput');
+            const generatedBatchId = document.getElementById('generatedBatchId');
+            const generatedQrCode = document.getElementById('generatedQrCode');
+            const batchHistoryGrid = document.getElementById('batchHistoryGrid');
+            const searchBatchInput = document.getElementById('searchBatch');
+            const showCreateBatchFormBtn = document.getElementById('showCreateBatchFormBtn');
+            const createBatchSection = document.getElementById('createBatchSection');
+            const geoTaggedPhotoInput = document.getElementById('geoTaggedPhoto');
+            const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+            const photoPreview = document.getElementById('photoPreview');
+            const photoMetadataOverlay = document.getElementById('photoMetadataOverlay');
+            const photoDate = document.getElementById('photoDate');
+            const photoTime = document.getElementById('photoTime');
+            const photoLocation = document.getElementById('photoLocation');
+            const farmLocationInput = document.getElementById('farmLocation');
+            const getLocationBtn = document.getElementById('getLocationBtn');
+
+            // Toggle Create New Batch form visibility
+            showCreateBatchFormBtn.addEventListener('click', function() {
+                const isVisible = createBatchSection.style.display !== 'none';
+                createBatchSection.style.display = isVisible ? 'none' : 'block';
+                qrCodeOutput.style.display = 'none';
+                
+                if (!isVisible) {
+                    createBatchSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+
+            // Crop type icons mapping
+            const cropIcons = {
+                'Rice': '<i class="fas fa-seedling"></i>',
+                'Wheat': '<i class="fas fa-wheat-awn"></i>',
+                'Cotton': '<i class="fas fa-seedling"></i>',
+                'Corn': '<i class="fas fa-corn"></i>',
+                'Soybean': '<i class="fas fa-leaf"></i>',
+                'Ashwagandha Powder': '<i class="fas fa-leaf"></i>'
+            };
+
+            // Function to update photo metadata overlay
+            function updatePhotoMetadataOverlay() {
+                const now = new Date();
+                photoDate.textContent = now.toLocaleDateString();
+                photoTime.textContent = now.toLocaleTimeString();
+                photoLocation.textContent = farmLocationInput.value || 'N/A';
+
+                if (photoPreview.src && photoPreview.style.display !== 'none') {
+                    photoMetadataOverlay.style.display = 'block';
+                } else {
+                    photoMetadataOverlay.style.display = 'none';
+                }
+            }
+
+            // Geo-tagged photo preview functionality
+            geoTaggedPhotoInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        photoPreview.src = e.target.result;
+                        photoPreview.style.display = 'block';
+                        photoPreviewContainer.style.display = 'block'; // Changed to block for relative positioning
+                        updatePhotoMetadataOverlay(); // Update overlay with current data
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    photoPreviewContainer.style.display = 'none';
+                    photoPreview.style.display = 'none';
+                    photoMetadataOverlay.style.display = 'none';
+                    photoPreview.src = '';
+                }
+            });
+
+            // Get Current Location button functionality
+            getLocationBtn.addEventListener('click', function() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        farmLocationInput.value = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+                        updatePhotoMetadataOverlay(); // Update overlay with new location
+                    }, function(error) {
+                        alert(`Error getting location: ${error.message}`);
+                    });
+                } else {
+                    alert("Geolocation is not supported by this browser.");
+                }
+            });
+
+            newBatchForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                const cropType = document.getElementById('cropType').value;
+                const quantity = document.getElementById('quantity').value;
+                const harvestDate = document.getElementById('harvestDate').value;
+                const farmLocation = document.getElementById('farmLocation').value;
+                const geoTaggedPhotoFile = geoTaggedPhotoInput.files[0];
+
+                if (!cropType || !quantity || !harvestDate || !farmLocation) {
+                    alert('Please fill in all required fields.');
+                    return;
+                }
+
+                // Show loading state
+                const submitBtn = event.target.querySelector('.submit-btn');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<div class="loading"></div> Creating Batch...';
+                submitBtn.disabled = true;
+
+                try {
+                    // Generate a unique Batch ID
+                    const datePart = new Date(harvestDate).toISOString().slice(0,10).replace(/-/g,"");
+                    const batchId = `AYR-${datePart}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+
+                    // 1. Create batch on the blockchain
+                    const createBatchTx = farmerDashboard.methods.createBatch(
+                        batchId,
+                        cropType,
+                        quantity,
+                        harvestDate,
+                        farmLocation,
+                        web3.utils.sha3('dummy_hash') // Replace with actual photo hash
+                    );
+
+                    const gas = await createBatchTx.estimateGas({ from: account.address });
+                    const gasPrice = await web3.eth.getGasPrice();
+                    const data = createBatchTx.encodeABI();
+                    const nonce = await web3.eth.getTransactionCount(account.address);
+
+                    const signedTx = await web3.eth.accounts.signTransaction(
+                        {
+                            to: FARMER_DASHBOARD_ADDRESS,
+                            data,
+                            gas,
+                            gasPrice,
+                            nonce,
+                        },
+                        PRIVATE_KEY
+                    );
+
+                    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+                    console.log('Transaction receipt:', receipt);
+
+                    // 2. Insert batch data into Supabase
+                    const { data: supabaseData, error: supabaseError } = await supabase
+                        .from('farmer_batches')
+                        .insert([
+                            {
+                                batch_id: batchId,
+                                crop_type: cropType,
+                                quantity: quantity,
+                                harvest_date: harvestDate,
+                                farm_location: farmLocation,
+                                photo_hash: 'dummy_hash', // Replace with actual photo hash
+                                status: 'Pending',
+                                owner: account.address,
+                                timestamp: new Date().toISOString(),
+                            },
+                        ]);
+
+                    if (supabaseError) {
+                        throw new Error(`Supabase error: ${supabaseError.message}`);
+                    }
+
+                    // 3. Generate QR Code and update UI
+                    let qrCodeData = `Batch ID: ${batchId}, Crop: ${cropType}, Quantity: ${quantity}kg, Harvest Date: ${harvestDate}, Location: ${farmLocation}`;
+                    const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeData)}`;
+
+                    generatedBatchId.textContent = batchId;
+                    generatedQrCode.src = qrCodeImageUrl;
+                    qrCodeOutput.style.display = 'block';
+
+                    // Add to batch history grid
+                    const cropIconHtml = cropIcons[cropType] || '<i class="fas fa-seedling"></i>'; // Default icon
+                    const newBatchCard = document.createElement('div');
+                    newBatchCard.classList.add('batch-card');
+                    newBatchCard.innerHTML = `
+                        <div class="batch-header">
+                            <div class="batch-crop">
+                                <div class="crop-icon">${cropIconHtml}</div>
+                                <div class="crop-name">${cropType}</div>
+                            </div>
+                            <span class="status pending">
+                                <i class="fas fa-clock"></i>
+                                Pending
+                            </span>
+                        </div>
+                        <div class="batch-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Batch ID</span>
+                                <span class="detail-value">${batchId}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Quantity</span>
+                                <span class="detail-value">${quantity}kg</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Created</span>
+                                <span class="detail-value">Just now</span>
+                            </div>
+                        </div>
+                    `;
+                    batchHistoryGrid.prepend(newBatchCard);
+
+                    // Reset form and button
+                    newBatchForm.reset();
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+
+                    // Clear photo preview
+                    photoPreviewContainer.style.display = 'none';
+                    photoPreview.style.display = 'none';
+                    photoMetadataOverlay.style.display = 'none';
+                    photoPreview.src = '';
+                    geoTaggedPhotoInput.value = '';
+
+                    // Scroll to QR code
+                    qrCodeOutput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Update stats (simple increment)
+                    updateStats();
+                } catch (error) {
+                    alert(`Error creating batch: ${error.message}`);
+                    // Reset button
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+
+            // Search functionality
+            searchBatchInput.addEventListener('input', function() {
+                const filter = this.value.toLowerCase();
+                const batchCards = document.querySelectorAll('.batch-card');
+
+                batchCards.forEach(card => {
+                    const textContent = card.textContent.toLowerCase();
+                    if (textContent.includes(filter)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+
+            // Function to update stats
+            function updateStats() {
+                const totalBatches = document.querySelectorAll('.batch-card').length;
+                const statNumbers = document.querySelectorAll('.stat-number');
+                if (statNumbers[0]) {
+                    statNumbers[0].textContent = totalBatches;
+                }
+            }
+
+            // Set today's date as default for harvest date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('harvestDate').value = today;
+        });
+
+    <main class="main-content">
+        <div class="container">
+            <section class="welcome-section">
+                <div class="welcome-content">
+                    <div class="welcome-text">
+                        <h1>Welcome back, John!</h1>
+                        <p>Manage your supply chain operations with ease</p>
+                    </div>
+                    <button class="create-batch-btn" id="showCreateBatchFormBtn">
+                        <i class="fas fa-plus"></i>
+                        Create New Batch
+                    </button>
+                </div>
+            </section>
+
+            <section class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon total">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-number">4</div>
+                            <div class="stat-label">Total Batches</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon transit">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-number">1</div>
+                            <div class="stat-label">In Transit</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon delivered">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-number">1</div>
+                            <div class="stat-label">Delivered</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-icon processing">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-number">1</div>
+                            <div class="stat-label">Processing</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card" id="createBatchSection" style="display: none;">
+                <div class="card-header">
+                    <h2>
+                        <i class="fas fa-plus-circle"></i>
+                        Create New Batch
+                    </h2>
+                </div>
+                <form id="newBatchForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="cropType">Crop Type</label>
+                            <select id="cropType" name="cropType" class="form-input" required>
+                                <option value="">Select Crop</option>
+                                <option value="Rice">Rice</option>
+                                <option value="Wheat">Wheat</option>
+                                <option value="Cotton">Cotton</option>
+                                <option value="Corn">Corn</option>
+                                <option value="Soybean">Soybean</option>
+                                <option value="Ashwagandha Powder">Ashwagandha Powder</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="quantity">Quantity (kg)</label>
+                            <input type="number" id="quantity" name="quantity" class="form-input" placeholder="e.g., 100" required min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="harvestDate">Harvest Date</label>
+                            <input type="date" id="harvestDate" name="harvestDate" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="farmLocation">Farm Location</label>
+                            <div class="location-input-group">
+                                <input type="text" id="farmLocation" name="farmLocation" class="form-input" placeholder="Village name or GPS coordinates" required>
+                                <button type="button" id="getLocationBtn" class="get-location-btn">
+                                    <i class="fas fa-map-marker-alt"></i> Get Location
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="photo-upload-section">
+                        <label for="geoTaggedPhoto">Upload Geo-tagged Photo (Optional)</label>
+                        <input type="file" id="geoTaggedPhoto" name="geoTaggedPhoto" accept="image/*" class="photo-upload-input">
+                        <div id="photoPreviewContainer" class="photo-preview-container">
+                            <img id="photoPreview" src="" alt="Photo Preview" style="display: none;">
+                            <div id="photoMetadataOverlay" class="photo-metadata-overlay" style="display: none;">
+                                <p><strong>Date:</strong> <span id="photoDate"></span></p>
+                                <p><strong>Time:</strong> <span id="photoTime"></span></p>
+                                <p><strong>Location:</strong> <span id="photoLocation"></span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-qrcode"></i>
+                            Generate Batch & QR Code
+                        </button>
+                    </div>
+                </form>
+
+                <div id="qrCodeOutput" class="qr-code-section">
+                    <h3>
+                        <i class="fas fa-check-circle"></i>
+                        Batch Created Successfully!
+                    </h3>
+                    <p><strong>Batch ID:</strong> <span id="generatedBatchId"></span></p>
+                    <img id="generatedQrCode" src="" alt="QR Code">
+                    <p>Scan this QR code to track your batch</p>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header">
+                    <h2>
+                        <i class="fas fa-history"></i>
+                        Your Batches
+                    </h2>
+                </div>
+                <div class="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchBatch" class="search-input" placeholder="Search batches by crop, ID, or status...">
+                </div>
+                <div class="batch-history-grid" id="batchHistoryGrid">
+                    <div class="batch-card">
+                        <div class="batch-header">
+                            <div class="batch-crop">
+                                <div class="crop-icon"><i class="fas fa-leaf"></i></div>
+                                <div class="crop-name">Ashwagandha Powder</div>
+                            </div>
+                            <span class="status delivered">
+                                <i class="fas fa-check"></i>
+                                Delivered
+                            </span>
+                        </div>
+                        <div class="batch-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Batch ID</span>
+                                <span class="detail-value">AYR-2024-001</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Quantity</span>
+                                <span class="detail-value">500kg</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Created</span>
+                                <span class="detail-value">2 days ago</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="batch-card">
+                        <div class="batch-header">
+                            <div class="batch-crop">
+                                <div class="crop-icon"><i class="fas fa-seedling"></i></div>
+                                <div class="crop-name">Rice</div>
+                            </div>
+                            <span class="status in-transit">
+                                <i class="fas fa-truck"></i>
+                                In Transit
+                            </span>
+                        </div>
+                        <div class="batch-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Batch ID</span>
+                                <span class="detail-value">FR123-20250908</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Quantity</span>
+                                <span class="detail-value">100kg</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Created</span>
+                                <span class="detail-value">1 week ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://zanejoswscmmppiuifso.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbmVqb3N3c2NtbXBwaXVpZnNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxMzE1MjYsImV4cCI6MjA3MzcwNzUyNn0.0iW4ap4gNnF1SQkM8eFDA14ukUFuZeuCmvrMxsNxo_4';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Import configuration from config.js
+        // const config = window.config; // config.js is loaded as a separate script
+        const web3 = new Web3(new Web3.providers.HttpProvider(window.config.GANACHE_URL));
+
+        // IMPORTANT: Replace 'your_private_key_here' in config.js with a private key from Ganache
+        const PRIVATE_KEY = window.config.PRIVATE_KEY; 
+        const account = web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY);
+        web3.eth.defaultAccount = account.address;
+
+        const FARMER_DASHBOARD_ADDRESS = window.config.CONTRACT_ADDRESSES.FarmerDashboard;
+        const FARMER_DASHBOARD_ABI = window.config.CONTRACT_ABIS.FarmerDashboard;;
+        const farmerDashboard = new web3.eth.Contract(FARMER_DASHBOARD_ABI, FARMER_DASHBOARD_ADDRESS);
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const authModal = document.getElementById('auth-modal');
+            const loginBtn = document.getElementById('login-btn');
+            const signupBtn = document.getElementById('signup-btn');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+
+            // Check for logged in user
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                authModal.style.display = 'flex';
+            }
+
+            // Login user
+            loginBtn.addEventListener('click', async () => {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: emailInput.value,
+                    password: passwordInput.value,
+                });
+                if (error) {
+                    alert(`Error logging in: ${error.message}`);
+                } else {
+                    authModal.style.display = 'none';
+                    location.reload();
+                }
+            });
+
+            // Signup user
+            signupBtn.addEventListener('click', async () => {
+                const { data, error } = await supabase.auth.signUp({
+                    email: emailInput.value,
+                    password: passwordInput.value,
+                });
+                if (error) {
+                    alert(`Error signing up: ${error.message}`);
+                } else {
+                    alert('Signup successful! Please check your email to verify your account.');
+                }
+            });
+
+            // Load batch history
+            async function loadBatchHistory() {
+                const { data: batches, error } = await supabase
+                    .from('farmer_batches')
+                    .select('*')
+                    .eq('owner', account.address);
+
+                if (error) {
+                    console.error('Error loading batch history:', error);
+                    return;
+                }
+
+                batchHistoryGrid.innerHTML = '';
+                for (const batch of batches) {
+                    const cropIconHtml = cropIcons[batch.crop_type] || '<i class="fas fa-seedling"></i>';
+                    const newBatchCard = document.createElement('div');
+                    newBatchCard.classList.add('batch-card');
+                    newBatchCard.innerHTML = `
+                        <div class="batch-header">
+                            <div class="batch-crop">
+                                <div class="crop-icon">${cropIconHtml}</div>
+                                <div class="crop-name">${batch.crop_type}</div>
+                            </div>
+                            <span class="status pending">
+                                <i class="fas fa-clock"></i>
+                                ${batch.status}
+                            </span>
+                        </div>
+                        <div class="batch-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Batch ID</span>
+                                <span class="detail-value">${batch.batch_id}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Quantity</span>
+                                <span class="detail-value">${batch.quantity}kg</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Created</span>
+                                <span class="detail-value">${new Date(batch.timestamp).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    `;
+                    batchHistoryGrid.appendChild(newBatchCard);
+                }
+            }
+
+            if (user) {
+                loadBatchHistory();
+            }
+        });
+            const newBatchForm = document.getElementById('newBatchForm');
+            const qrCodeOutput = document.getElementById('qrCodeOutput');
+            const generatedBatchId = document.getElementById('generatedBatchId');
+            const generatedQrCode = document.getElementById('generatedQrCode');
+            const batchHistoryGrid = document.getElementById('batchHistoryGrid');
+            const searchBatchInput = document.getElementById('searchBatch');
+            const showCreateBatchFormBtn = document.getElementById('showCreateBatchFormBtn');
+            const createBatchSection = document.getElementById('createBatchSection');
+            const geoTaggedPhotoInput = document.getElementById('geoTaggedPhoto');
+            const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+            const photoPreview = document.getElementById('photoPreview');
+            const photoMetadataOverlay = document.getElementById('photoMetadataOverlay');
+            const photoDate = document.getElementById('photoDate');
+            const photoTime = document.getElementById('photoTime');
+            const photoLocation = document.getElementById('photoLocation');
+            const farmLocationInput = document.getElementById('farmLocation');
+            const getLocationBtn = document.getElementById('getLocationBtn');
+
+            // Toggle Create New Batch form visibility
+            showCreateBatchFormBtn.addEventListener('click', function() {
+                const isVisible = createBatchSection.style.display !== 'none';
+                createBatchSection.style.display = isVisible ? 'none' : 'block';
+                qrCodeOutput.style.display = 'none';
+                
+                if (!isVisible) {
+                    createBatchSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+
+            // Crop type icons mapping
+            const cropIcons = {
+                'Rice': '<i class="fas fa-seedling"></i>',
+                'Wheat': '<i class="fas fa-wheat-awn"></i>',
+                'Cotton': '<i class="fas fa-seedling"></i>',
+                'Corn': '<i class="fas fa-corn"></i>',
+                'Soybean': '<i class="fas fa-leaf"></i>',
+                'Ashwagandha Powder': '<i class="fas fa-leaf"></i>'
+            };
+
+            // Function to update photo metadata overlay
+            function updatePhotoMetadataOverlay() {
+                const now = new Date();
+                photoDate.textContent = now.toLocaleDateString();
+                photoTime.textContent = now.toLocaleTimeString();
+                photoLocation.textContent = farmLocationInput.value || 'N/A';
+
+                if (photoPreview.src && photoPreview.style.display !== 'none') {
+                    photoMetadataOverlay.style.display = 'block';
+                } else {
+                    photoMetadataOverlay.style.display = 'none';
+                }
+            }
+
+            // Geo-tagged photo preview functionality
+            geoTaggedPhotoInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        photoPreview.src = e.target.result;
+                        photoPreview.style.display = 'block';
+                        photoPreviewContainer.style.display = 'block'; // Changed to block for relative positioning
+                        updatePhotoMetadataOverlay(); // Update overlay with current data
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    photoPreviewContainer.style.display = 'none';
+                    photoPreview.style.display = 'none';
+                    photoMetadataOverlay.style.display = 'none';
+                    photoPreview.src = '';
+                }
+            });
+
+            // Get Current Location button functionality
+            getLocationBtn.addEventListener('click', function() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        farmLocationInput.value = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+                        updatePhotoMetadataOverlay(); // Update overlay with new location
+                    }, function(error) {
+                        alert(`Error getting location: ${error.message}`);
+                    });
+                } else {
+                    alert("Geolocation is not supported by this browser.");
+                }
+            });
+
+            newBatchForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                const cropType = document.getElementById('cropType').value;
+                const quantity = document.getElementById('quantity').value;
+                const harvestDate = document.getElementById('harvestDate').value;
+                const farmLocation = document.getElementById('farmLocation').value;
+                const geoTaggedPhotoFile = geoTaggedPhotoInput.files[0];
+
+                if (!cropType || !quantity || !harvestDate || !farmLocation) {
+                    alert('Please fill in all required fields.');
+                    return;
+                }
+
+                // Show loading state
+                const submitBtn = event.target.querySelector('.submit-btn');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<div class="loading"></div> Creating Batch...';
+                submitBtn.disabled = true;
+
+                try {
+                    // Generate a unique Batch ID
+                    const datePart = new Date(harvestDate).toISOString().slice(0,10).replace(/-/g,"");
+                    const batchId = `AYR-${datePart}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+
+                    // 1. Create batch on the blockchain
+                    const createBatchTx = farmerDashboard.methods.createBatch(
+                        batchId,
+                        cropType,
+                        quantity,
+                        harvestDate,
+                        farmLocation,
+                        web3.utils.sha3('dummy_hash') // Replace with actual photo hash
+                    );
+
+                    const gas = await createBatchTx.estimateGas({ from: account.address });
+                    const gasPrice = await web3.eth.getGasPrice();
+                    const data = createBatchTx.encodeABI();
+                    const nonce = await web3.eth.getTransactionCount(account.address);
+
+                    const signedTx = await web3.eth.accounts.signTransaction(
+                        {
+                            to: FARMER_DASHBOARD_ADDRESS,
+                            data,
+                            gas,
+                            gasPrice,
+                            nonce,
+                        },
+                        PRIVATE_KEY
+                    );
+
+                    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+                    console.log('Transaction receipt:', receipt);
+
+                    // 2. Insert batch data into Supabase
+                    const { data: supabaseData, error: supabaseError } = await supabase
+                        .from('farmer_batches')
+                        .insert([
+                            {
+                                batch_id: batchId,
+                                crop_type: cropType,
+                                quantity: quantity,
+                                harvest_date: harvestDate,
+                                farm_location: farmLocation,
+                                photo_hash: 'dummy_hash', // Replace with actual photo hash
+                                status: 'Pending',
+                                owner: account.address,
+                                timestamp: new Date().toISOString(),
+                            },
+                        ]);
+
+                    if (supabaseError) {
+                        throw new Error(`Supabase error: ${supabaseError.message}`);
+                    }
+
+                    // 3. Generate QR Code and update UI
+                    let qrCodeData = `Batch ID: ${batchId}, Crop: ${cropType}, Quantity: ${quantity}kg, Harvest Date: ${harvestDate}, Location: ${farmLocation}`;
+                    const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeData)}`;
+
+                    generatedBatchId.textContent = batchId;
+                    generatedQrCode.src = qrCodeImageUrl;
+                    qrCodeOutput.style.display = 'block';
+
+                    // Add to batch history grid
+                    const cropIconHtml = cropIcons[cropType] || '<i class="fas fa-seedling"></i>'; // Default icon
+                    const newBatchCard = document.createElement('div');
+                    newBatchCard.classList.add('batch-card');
+                    newBatchCard.innerHTML = `
+                        <div class="batch-header">
+                            <div class="batch-crop">
+                                <div class="crop-icon">${cropIconHtml}</div>
+                                <div class="crop-name">${cropType}</div>
+                            </div>
+                            <span class="status pending">
+                                <i class="fas fa-clock"></i>
+                                Pending
+                            </span>
+                        </div>
+                        <div class="batch-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Batch ID</span>
+                                <span class="detail-value">${batchId}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Quantity</span>
+                                <span class="detail-value">${quantity}kg</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Created</span>
+                                <span class="detail-value">Just now</span>
+                            </div>
+                        </div>
+                    `;
+                    batchHistoryGrid.prepend(newBatchCard);
+
+                    // Reset form and button
+                    newBatchForm.reset();
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+
+                    // Clear photo preview
+                    photoPreviewContainer.style.display = 'none';
+                    photoPreview.style.display = 'none';
+                    photoMetadataOverlay.style.display = 'none';
+                    photoPreview.src = '';
+                    geoTaggedPhotoInput.value = '';
+
+                    // Scroll to QR code
+                    qrCodeOutput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Update stats (simple increment)
+                    updateStats();
+                } catch (error) {
+                    alert(`Error creating batch: ${error.message}`);
+                    // Reset button
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+
+            // Search functionality
+            searchBatchInput.addEventListener('input', function() {
+                const filter = this.value.toLowerCase();
+                const batchCards = document.querySelectorAll('.batch-card');
+
+                batchCards.forEach(card => {
+                    const textContent = card.textContent.toLowerCase();
+                    if (textContent.includes(filter)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+
+            // Function to update stats
+            function updateStats() {
+                const totalBatches = document.querySelectorAll('.batch-card').length;
+                const statNumbers = document.querySelectorAll('.stat-number');
+                if (statNumbers[0]) {
+                    statNumbers[0].textContent = totalBatches;
+                }
+            }
+
+            // Set today's date as default for harvest date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('harvestDate').value = today;
+        });
+    </script>
+</body>
+</html>

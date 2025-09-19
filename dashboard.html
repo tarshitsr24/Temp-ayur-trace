@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AyurTrace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .timeline-item:last-child .timeline-line { display: none; }
+        .input {
+             border-color: #d1d5db; 
+             border-width: 1px;
+             padding: 0.5rem 0.75rem;
+             border-radius: 0.375rem;
+             box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div id="appLoader" class="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-indigo-600 mx-auto"></div>
+            <h2 class="text-2xl font-semibold text-gray-700 mt-4">Dashboard load ho raha hai...</h2>
+            <p class="text-gray-500">Blockchain se connect kar rahe hain.</p>
+        </div>
+    </div>
+    
+    <div id="appContent" class="hidden">
+        <header class="bg-white shadow-md sticky top-0 z-40">
+            <div class="container mx-auto px-4 py-3">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-xl font-bold text-gray-800">AyurTrace</h1>
+                    <div id="loggedInUser" class="text-center"></div>
+                    <div class="flex items-center space-x-4">
+                        <a href="settings.html" title="Settings" class="text-gray-600 hover:text-indigo-600">
+                           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </a>
+                        <button id="btnLogout" class="bg-red-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-red-600 text-sm">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="container mx-auto p-4 md:p-6 space-y-6">
+            <section class="bg-white p-6 rounded-2xl shadow-lg">
+                <h2 class="text-xl font-bold text-gray-800 mb-2">🔍 Scan or Enter ID</h2>
+                <div class="flex gap-2">
+                    <input id="searchIdInput" type="text" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Yahan Batch ya Serial ID daalein...">
+                    <button id="btnSearch" class="bg-indigo-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-indigo-700">Search</button>
+                </div>
+            </section>
+            
+            <section id="searchResults" class="hidden bg-white p-6 rounded-2xl shadow-lg space-y-4">
+                <h2 class="text-2xl font-bold text-gray-800">Supply Chain History</h2>
+                <p id="searchResultId" class="text-gray-500 mb-4">ID: -</p>
+                <div id="searchResultTrace" class="relative pl-6 border-l-2 border-gray-200"></div>
+                <div id="addButtonContainer" class="hidden pt-4">
+                    <button id="btnAddData" class="bg-green-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-green-700">Add My Record</button>
+                </div>
+            </section>
+            
+            <div id="dashboardsContainer" class="hidden">
+                <div id="farmerDashboard" class="hidden space-y-6">
+                    <section class="bg-white p-6 rounded-2xl shadow-lg">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">🌾 Create New Batch</h2>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Crop Type</label>
+                                <input id="f_cropType" type="text" placeholder="e.g., Ashwagandha" class="mt-1 block w-full input">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Quantity (in kg)</label>
+                                <input id="f_quantity" type="number" placeholder="100" class="mt-1 block w-full input">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Farm Location</label>
+                                <input id="f_location" type="text" placeholder="Village, District" class="mt-1 block w-full input">
+                            </div>
+                        </div>
+                        <button id="btn_f_createBatch" class="mt-4 w-full sm:w-auto bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700">Submit & Generate Batch ID</button>
+                        <div id="farmerFeedback" class="hidden mt-4 p-4 rounded-md text-sm"></div>
+                    </section>
+                </div>
+
+                <div id="collectorDashboard" class="hidden">
+                     <section class="bg-white p-6 rounded-2xl shadow-lg">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">👷 Collect Batch</h2>
+                        <div class="grid md:grid-cols-3 gap-4">
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Scan/Enter Farmer Batch ID</label>
+                                <input id="c_batchId" type="text" placeholder="Pichla Batch ID" class="mt-1 block w-full input">
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Crop Name</label>
+                                <input id="c_cropName" type="text" placeholder="e.g., Ashwagandha" class="mt-1 block w-full input">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Quantity Received (kg)</label>
+                                <input id="c_quantity" type="number" placeholder="100" class="mt-1 block w-full input">
+                            </div>
+                        </div>
+                        <button id="btn_c_forward" class="mt-4 w-full sm:w-auto bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700">Confirm & Forward</button>
+                        <div id="collectorFeedback" class="hidden mt-4 p-4 rounded-md text-sm"></div>
+                    </section>
+                </div>
+
+                 <div id="auditorDashboard" class="hidden">
+                     <section class="bg-white p-6 rounded-2xl shadow-lg">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">🕵️ Inspect Batch</h2>
+                         <div class="grid md:grid-cols-3 gap-4">
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Scan/Enter Batch ID</label>
+                                <input id="a_batchId" type="text" placeholder="Batch ID to inspect" class="mt-1 block w-full input">
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Crop Name</label>
+                                <input id="a_cropName" type="text" placeholder="e.g., Ashwagandha" class="mt-1 block w-full input">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Quantity Inspected (kg)</label>
+                                <input id="a_quantity" type="number" placeholder="100" class="mt-1 block w-full input">
+                            </div>
+                        </div>
+                        <button id="btn_a_approve" class="mt-4 w-full sm:w-auto bg-green-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-green-700">Approve & Update Record</button>
+                        <div id="auditorFeedback" class="hidden mt-4 p-4 rounded-md text-sm"></div>
+                    </section>
+                </div>
+
+                 <div id="manufacturerDashboard" class="hidden space-y-6">
+                     <section class="bg-white p-6 rounded-2xl shadow-lg">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">🏭 Create New Products & Serials</h2>
+                        <p class="text-sm text-gray-600 mb-4">This will generate unique serial numbers for each product and register them on the blockchain.</p>
+                        <div class="grid md:grid-cols-2 gap-4 items-start">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Batch ID (from Auditor)</label>
+                                <input id="m_batchId" type="text" placeholder="Approved Batch ID" class="mt-1 block w-full input">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Final Product Name</label>
+                                <input id="m_productName" type="text" placeholder="e.g., Ashwagandha Powder 500g" class="mt-1 block w-full input">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Number of Products to Create</label>
+                                <input id="m_quantity" type="number" placeholder="e.g., 100" class="mt-1 block w-full input">
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Processing Location</label>
+                                <input id="m_location" type="text" placeholder="e.g., Factory Unit A" class="mt-1 block w-full input">
+                            </div>
+                        </div>
+                        <button id="btn_m_createProducts" class="mt-4 w-full sm:w-auto bg-green-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-green-700">Generate Serials & Add to Blockchain</button>
+                        <div id="manufacturerFeedback" class="hidden mt-4 p-4 rounded-md text-sm"></div>
+                    </section>
+
+                    <section id="manufacturerSerialSection" class="hidden bg-white p-6 rounded-2xl shadow-lg">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Generated Serial Numbers & QR Codes</h2>
+                        <div id="serialNumberContainer" class="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+                    </section>
+                </div>
+
+                <div id="distributorDashboard" class="hidden">
+                     <section class="bg-white p-6 rounded-2xl shadow-lg">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">🚚 Receive & Dispatch Products</h2>
+                        <div class="grid md:grid-cols-3 gap-4">
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Scan/Enter Product Batch ID</label>
+                                <input id="d_batchId" type="text" placeholder="Product Batch ID from Manufacturer" class="mt-1 block w-full input">
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Product Name</label>
+                                <input id="d_productName" type="text" placeholder="e.g., Ashwagandha Powder 500g" class="mt-1 block w-full input">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Quantity Received (units)</label>
+                                <input id="d_quantity" type="number" placeholder="190" class="mt-1 block w-full input">
+                            </div>
+                        </div>
+                        <button id="btn_d_receive" class="mt-4 w-full sm:w-auto bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700">Confirm & Add to Inventory</button>
+                        <div id="distributorFeedback" class="hidden mt-4 p-4 rounded-md text-sm"></div>
+                    </section>
+                </div>
+
+            </div>
+
+             <section id="previousActivitySection" class="bg-white p-6 rounded-2xl shadow-lg">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">My Batch History</h2>
+                <div id="previousActivityGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+    // --- App Initialization and Auth Guard ---
+    let App;
+    document.addEventListener('DOMContentLoaded', () => {
+        const currentUserKey = sessionStorage.getItem('ayurtrace_currentUserKey');
+        if (!currentUserKey) {
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        const userData = JSON.parse(localStorage.getItem(currentUserKey));
+        if (!userData) {
+            sessionStorage.removeItem('ayurtrace_currentUserKey');
+            window.location.href = 'login.html';
+            return;
+        }
+        App.init(userData);
+    });
+    
+    // --- Smart Contract and Blockchain Configuration ---
+    const Blockchain = {
+        provider: null, wallet: null, contract: null,
+        ROLES: { 0: "Unknown", 1: "Farmer", 2: "Collector", 3: "Auditor", 4: "Manufacturer", 5: "Distributor" },
+        ROLE_ICONS: { 1: "🌾", 2: "👷", 3: "🕵️", 4: "🏭", 5: "🚚" },
+
+        async init() {
+            try {
+                this.provider = new ethers.JsonRpcProvider(AppConfig.GANACHE_URL);
+                this.wallet = new ethers.Wallet(AppConfig.SENDER_PRIVATE_KEY, this.provider);
+                this.contract = new ethers.Contract(AppConfig.CONTRACT_ADDRESS, AppConfig.CONTRACT_ABI, this.wallet);
+                await this.provider.getBlockNumber();
+                localStorage.setItem('ganache_url', AppConfig.GANACHE_URL);
+                return true;
+            } catch (e) {
+                console.error("Blockchain connection failed:", e);
+                alert("Could not connect to the blockchain. Please check the RPC URL in config.js and make sure your node is running.");
+                document.getElementById('appLoader').classList.add('hidden');
+                return false;
+            }
+        },
+
+        async handleTransaction(txPromise, feedbackElId) {
+            App.showFeedback(feedbackElId, 'Transaction bhej rahe hain...', 'info');
+            try {
+                const tx = await txPromise;
+                App.showFeedback(feedbackElId, `Transaction sent! Confirmation ka intezaar...`, 'info');
+                const receipt = await tx.wait();
+                App.showFeedback(feedbackElId, `Transaction safal!`, 'success');
+                return receipt;
+            } catch (e) {
+                const reason = e.reason || e.message || "Transaction fail ho gaya.";
+                App.showFeedback(feedbackElId, `Error: ${reason}`, 'error');
+                return null;
+            }
+        }
+    };
+
+    // --- Main App Logic ---
+    App = {
+        currentUser: null,
+
+        async init(userData) {
+            this.currentUser = userData;
+            document.getElementById('appLoader').classList.remove('hidden');
+            document.getElementById('appContent').classList.add('hidden');
+
+            const connected = await Blockchain.init();
+            
+            if (connected) {
+                await this.verifyAndRegisterCurrentUser();
+                this.setupEventListeners();
+                this.renderDashboard();
+                const hash = window.location.hash;
+                if (hash.startsWith('#search=')) {
+                    const searchId = decodeURIComponent(hash.substring(8));
+                    document.getElementById('searchIdInput').value = searchId;
+                    this.search();
+                }
+            }
+            document.getElementById('appLoader').classList.add('hidden');
+            document.getElementById('appContent').classList.remove('hidden');
+        },
+        
+        setupEventListeners() {
+            document.getElementById('btnLogout').addEventListener('click', () => this.logout());
+            document.getElementById('btnSearch').addEventListener('click', () => this.search());
+            document.getElementById('btnAddData').addEventListener('click', () => this.showAddDataForm());
+
+            if(this.currentUser.role === 1) document.getElementById('btn_f_createBatch').addEventListener('click', () => this.farmer_createBatch());
+            
+            if(this.currentUser.role === 2 || this.currentUser.role === 3 || this.currentUser.role === 5) {
+                const buttonId = {2: 'btn_c_forward', 3: 'btn_a_approve', 5: 'btn_d_receive'}[this.currentUser.role];
+                document.getElementById(buttonId).addEventListener('click', () => this.stakeholder_submitBlock());
+            }
+
+            if(this.currentUser.role === 4) {
+                document.getElementById('btn_m_createProducts').addEventListener('click', () => this.manufacturer_createProducts());
+            }
+        },
+
+        showFeedback(elId, message, type) {
+            const el = document.getElementById(elId);
+            el.className = 'p-4 rounded-md text-sm mt-4';
+            if (type === 'success') el.classList.add('bg-green-100', 'text-green-800');
+            else if (type === 'error') el.classList.add('bg-red-100', 'text-red-800');
+            else el.classList.add('bg-blue-100', 'text-blue-800');
+            el.innerHTML = message;
+            el.style.display = 'block';
+        },
+        
+        logout() {
+            sessionStorage.removeItem('ayurtrace_currentUserKey');
+            window.location.href = 'login.html';
+        },
+
+        async verifyAndRegisterCurrentUser() {
+            const loaderText = document.querySelector('#appLoader p');
+            loaderText.textContent = 'Verifying your blockchain identity...';
+            try {
+                const actorOnChain = await Blockchain.contract.actors(this.currentUser.actorId);
+                if (actorOnChain.isRegistered) {
+                    console.log("User already registered on blockchain.");
+                    return;
+                }
+
+                console.log("User not found on blockchain. Attempting to register now.");
+                loaderText.textContent = 'Registering your identity on the blockchain...';
+                
+                const { actorId, role, fullName, address, phone } = this.currentUser;
+                const txPromise = Blockchain.contract.registerActor(actorId, role, fullName, address, phone);
+                const receipt = await Blockchain.handleTransaction(txPromise, null);
+
+                if (!receipt) {
+                    alert("CRITICAL: We could not register your ID on the blockchain. Your actions on this page may fail. Please try re-logging.");
+                }
+            } catch (e) {
+                console.error("Error during blockchain registration check:", e);
+                alert("CRITICAL: An error occurred while checking your blockchain registration. Your actions on this page may fail.");
+            }
+        },
+
+        renderDashboard() {
+            const { actorId, role, fullName } = this.currentUser;
+            document.getElementById('loggedInUser').innerHTML = `
+                <p class="font-semibold text-gray-800">${fullName}</p>
+                <p class="text-xs text-gray-500">${actorId} <span class="font-bold text-indigo-600">${Blockchain.ROLES[role]}</span></p>
+            `;
+            
+            // Initially hide all dashboards, they will be shown on demand
+            document.querySelectorAll('#dashboardsContainer > div').forEach(d => d.classList.add('hidden'));
+
+            // Show farmer dashboard by default if farmer is logged in, as they start the chain.
+            if (role === 1) {
+                document.getElementById('farmerDashboard').classList.remove('hidden');
+                document.getElementById('dashboardsContainer').classList.remove('hidden');
+            }
+            
+            this.displayPreviousActivity();
+        },
+
+        showAddDataForm() {
+            document.getElementById('dashboardsContainer').classList.remove('hidden');
+            const roleDashboardMap = {1: 'farmerDashboard', 2: 'collectorDashboard', 3: 'auditorDashboard', 4: 'manufacturerDashboard', 5: 'distributorDashboard'};
+            const dashboardId = roleDashboardMap[this.currentUser.role];
+            if(dashboardId) {
+                 document.querySelectorAll('#dashboardsContainer > div').forEach(d => d.classList.add('hidden'));
+                 document.getElementById(dashboardId).classList.remove('hidden');
+                 // Pre-fill the batch ID for the stakeholder
+                 const searchedId = document.getElementById('searchIdInput').value.trim();
+                 const p = { 2: 'c', 3: 'a', 4: 'm', 5: 'd' }[this.currentUser.role];
+                 if(p) document.getElementById(`${p}_batchId`).value = searchedId;
+            }
+        },
+        
+        async farmer_createBatch() {
+            const cropName = document.getElementById('f_cropType').value.trim();
+            const quantity = document.getElementById('f_quantity').value;
+            const location = document.getElementById('f_location').value.trim();
+            
+            if (!cropName || !quantity || !location) return this.showFeedback('farmerFeedback', "Kripya sabhi fields bharein.", 'error');
+
+            const txPromise = Blockchain.contract.createFarmerBlockAutoBatch(this.currentUser.actorId, String(Date.now()), cropName, parseInt(quantity), location);
+            const receipt = await Blockchain.handleTransaction(txPromise, 'farmerFeedback');
+
+            if (receipt && receipt.logs) {
+                 const blockCreatedTopic = Blockchain.contract.interface.getEvent("BlockCreated").topicHash;
+                 const log = receipt.logs.find(l => l.topics[0] === blockCreatedTopic);
+                 if(log) {
+                    const event = Blockchain.contract.interface.parseLog(log);
+                    const batchId = event.args.batchId;
+                    this.showFeedback('farmerFeedback', `<strong>Safal! Aapka naya Batch ID hai: ${batchId}</strong>`, 'success');
+                    this.addBatchToLocalStorage(batchId);
+                    this.displayPreviousActivity();
+                 }
+            }
+        },
+
+        async stakeholder_submitBlock(){
+            const role = this.currentUser.role;
+            const p = { 2: 'c', 3: 'a', 5: 'd' }[role];
+            const feedbackId = `${Blockchain.ROLES[role].toLowerCase()}Feedback`;
+
+            if (!p) return this.showFeedback(feedbackId, "Invalid role for this action.", 'error');
+
+            const batchId = document.getElementById(`${p}_batchId`).value.trim();
+            const productName = document.getElementById(`${p}_${role > 3 ? 'productName' : 'cropName'}`).value.trim();
+            const quantity = document.getElementById(`${p}_quantity`).value;
+
+            if(!batchId || !productName || !quantity) return this.showFeedback(feedbackId, "Kripya saare zaroori fields bharein.", 'error');
+
+            let prevIndex;
+            try {
+                this.showFeedback(feedbackId, `Pichle batch ki jaankari check kar rahe hain...`, 'info');
+                const chain = await Blockchain.contract.getFullChainByBatch(batchId);
+                if (!chain || chain.length === 0) throw new Error("Batch not found");
+                prevIndex = chain[chain.length - 1].index;
+            } catch(e) {
+                 return this.showFeedback(feedbackId, `Error: Batch ID "${batchId}" nahi mila.`, 'error');
+            }
+
+            let txPromise;
+            const commonArgs = [this.currentUser.actorId, String(Date.now()), productName, parseInt(quantity), this.currentUser.address, batchId, prevIndex];
+
+            switch(role) {
+                case 2: txPromise = Blockchain.contract.createCollectorBlock(...commonArgs); break;
+                case 3: txPromise = Blockchain.contract.createAuditorBlock(...commonArgs); break;
+                case 5: txPromise = Blockchain.contract.createDistributorBlock(...commonArgs); break;
+            }
+            
+            const receipt = await Blockchain.handleTransaction(txPromise, feedbackId);
+             if (receipt) {
+                 this.addBatchToLocalStorage(batchId);
+                 this.displayPreviousActivity();
+             }
+        },
+
+        async manufacturer_createProducts() {
+            const batchId = document.getElementById('m_batchId').value.trim();
+            const productName = document.getElementById('m_productName').value.trim();
+            const quantity = parseInt(document.getElementById('m_quantity').value);
+            const location = document.getElementById('m_location').value.trim();
+            const feedbackId = 'manufacturerFeedback';
+
+            if (!batchId || !productName || !location || isNaN(quantity) || quantity <= 0) {
+                return this.showFeedback(feedbackId, "Please fill in all fields and provide a valid quantity.", 'error');
+            }
+
+            this.showFeedback(feedbackId, `Validating batch ID and getting previous block index...`, 'info');
+
+            let prevIndex;
+            try {
+                const chain = await Blockchain.contract.getFullChainByBatch(batchId);
+                if (!chain || chain.length === 0) throw new Error("Batch not found");
+                prevIndex = chain[chain.length - 1].index;
+            } catch(e) {
+                 return this.showFeedback(feedbackId, `Error: Batch ID "${batchId}" not found.`, 'error');
+            }
+
+            const serialsContainer = document.getElementById('serialNumberContainer');
+            document.getElementById('manufacturerSerialSection').classList.remove('hidden');
+            serialsContainer.innerHTML = ''; // Clear previous results
+
+            const generatedSerials = [];
+
+            for (let i = 1; i <= quantity; i++) {
+                const serialNumber = `${batchId}-${Date.now()}-${i}`;
+                this.showFeedback(feedbackId, `Creating product ${i} of ${quantity} on the blockchain... (Serial: ${serialNumber})`, 'info');
+
+                const txPromise = Blockchain.contract.createManufacturerBlock(
+                    this.currentUser.actorId, 
+                    String(Date.now()), 
+                    productName, 
+                    1, // Quantity is 1 for each individual product
+                    location, 
+                    batchId, 
+                    prevIndex, 
+                    serialNumber
+                );
+
+                const receipt = await Blockchain.handleTransaction(txPromise, feedbackId);
+
+                if (receipt) {
+                    this.showFeedback(feedbackId, `Successfully created product ${i} of ${quantity}.`, 'success');
+                    generatedSerials.push(serialNumber);
+                    // We need to update prevIndex for the next item in the same batch
+                    const blockCreatedTopic = Blockchain.contract.interface.getEvent("BlockCreated").topicHash;
+                    const log = receipt.logs.find(l => l.topics[0] === blockCreatedTopic);
+                    if(log) {
+                       const event = Blockchain.contract.interface.parseLog(log);
+                       prevIndex = event.args.index;
+                    }
+                } else {
+                    this.showFeedback(feedbackId, `Failed to create product ${i} of ${quantity}. Aborting.`, 'error');
+                    return; // Stop if one transaction fails
+                }
+            }
+
+            this.showFeedback(feedbackId, `All ${quantity} products created successfully! Displaying QR codes.`, 'success');
+            this.displayGeneratedQRCodes(generatedSerials);
+            this.addBatchToLocalStorage(batchId);
+            this.displayPreviousActivity();
+        },
+
+        displayGeneratedQRCodes(serialNumbers) {
+            const container = document.getElementById('serialNumberContainer');
+            container.innerHTML = ''; // Clear previous results
+
+            serialNumbers.forEach(serialNumber => {
+                const searchLink = `${window.location.origin}/Sih-prototype/search.html#${serialNumber}`;
+
+                const card = document.createElement('div');
+                card.className = 'text-center p-2 bg-gray-50 rounded-lg border';
+
+                const canvas = document.createElement('canvas');
+                card.appendChild(canvas);
+
+                const idEl = document.createElement('p');
+                idEl.className = 'text-xs font-semibold text-gray-700 mt-2 break-all';
+                idEl.textContent = serialNumber;
+                card.appendChild(idEl);
+
+                const printBtn = document.createElement('button');
+                printBtn.textContent = 'Print';
+                printBtn.className = 'text-xs bg-gray-200 px-2 py-1 rounded mt-2 hover:bg-gray-300';
+                printBtn.onclick = () => {
+                    const printWindow = window.open('', '_blank');
+                    printWindow.document.write(`
+                        <html>
+                            <head><title>Print QR Code - ${serialNumber}</title></head>
+                            <body style="text-align:center; margin-top: 50px;">
+                                <img src="${canvas.toDataURL()}" />
+                                <p style="font-family: sans-serif; font-weight: bold;">${serialNumber}</p>
+                                <script>
+                                    window.onload = () => { window.print(); window.close(); };
+                                <\/script>
+                            </body>
+                        </html>
+                    `);
+                    printWindow.document.close();
+                };
+                card.appendChild(printBtn);
+
+                container.appendChild(card);
+
+                QRCode.toCanvas(canvas, searchLink, { width: 150, margin: 1 });
+            });
+        },
+
+        printQrCode(dataUrl, serialNumber) {
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head><title>Print QR Code - ${serialNumber}</title></head>
+                    <body style="text-align:center; margin-top: 50px;">
+                        <img src="${dataUrl}" />
+                        <p style="font-family: sans-serif; font-weight: bold;">${serialNumber}</p>
+                        <script>
+                            window.onload = () => {
+                                window.print();
+                                window.close();
+                            };
+                        <\/script>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+        },
+
+        async search() {
+            const searchId = document.getElementById('searchIdInput').value.trim();
+            if (!searchId) return;
+
+            const resultsEl = document.getElementById('searchResults');
+            const traceContainer = document.getElementById('searchResultTrace');
+            const addButtonContainer = document.getElementById('addButtonContainer');
+            const dashboardsContainer = document.getElementById('dashboardsContainer');
+
+            traceContainer.innerHTML = '<p>Blockchain se data la rahe hain...</p>';
+            resultsEl.classList.remove('hidden');
+            addButtonContainer.classList.add('hidden');
+            dashboardsContainer.classList.add('hidden');
+
+            try {
+                const chain = await Blockchain.contract.getFullChainByBatch(searchId);
+                document.getElementById('searchResultId').textContent = `ID: ${searchId}`;
+                
+                if (!chain || chain.length === 0) {
+                    traceContainer.innerHTML = `<p class="text-red-500">Is ID ke liye koi record nahi mila: ${searchId}</p>`;
+                    // Allow farmer to create a new batch with this ID if it doesn't exist.
+                    if (this.currentUser.role === 1) {
+                        addButtonContainer.classList.remove('hidden');
+                    }
+                    return;
+                }
+                
+                this.renderChain(chain, traceContainer);
+                // Show add button only if the user is a stakeholder who can act on this chain
+                if (this.currentUser.role > 1) {
+                    addButtonContainer.classList.remove('hidden');
+                }
+
+            } catch (e) {
+                traceContainer.innerHTML = `<p class="text-red-600">Error: Data nahi mil paya. Check the ID and your blockchain connection.</p>`;
+            }
+        },
+
+        renderChain(chain, container) {
+            let html = '';
+            chain.forEach(block => {
+                const timestamp = new Date(Number(block.createdAt) * 1000).toLocaleString();
+                html += `
+                <div class="timeline-item flex gap-4 pb-8">
+                    <div class="flex flex-col items-center">
+                        <div class="bg-indigo-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl">${Blockchain.ROLE_ICONS[block.role]}</div>
+                        <div class="timeline-line w-0.5 h-full bg-gray-200"></div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg flex-1">
+                        <p class="font-bold text-gray-800">${Blockchain.ROLES[block.role]} Action</p>
+                        <p class="text-sm text-gray-500">By <strong>${block.name}</strong> (${block.actorId}) at ${block.addr || 'N/A'}</p>
+                        <p class="text-xs text-gray-400 mb-2">${timestamp}</p>
+                        <div class="text-sm">
+                           <p><strong>Product:</strong> ${block.cropName}</p>
+                           <p><strong>Quantity:</strong> ${block.quantity.toString()}</p>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        },
+
+        addBatchToLocalStorage(batchId) {
+            const key = `ayurtrace_batches_${this.currentUser.actorId}`;
+            let batches = JSON.parse(localStorage.getItem(key)) || [];
+            if (!batches.includes(batchId)) {
+                batches.unshift(batchId);
+                localStorage.setItem(key, JSON.stringify(batches.slice(0, 12))); 
+            }
+        },
+
+        async displayPreviousActivity() {
+            const grid = document.getElementById('previousActivityGrid');
+            const key = `ayurtrace_batches_${this.currentUser.actorId}`;
+            const localBatches = JSON.parse(localStorage.getItem(key)) || [];
+            
+            grid.innerHTML = '<p class="col-span-full text-center text-gray-500">Checking batch history from blockchain...</p>';
+
+            const verifiedBatches = [];
+
+            for (const batchId of localBatches) {
+                try {
+                    const chain = await Blockchain.contract.getFullChainByBatch(batchId);
+                    if (chain && chain.length > 0) {
+                        verifiedBatches.push(batchId);
+                    }
+                } catch (e) {
+                    console.warn(`Batch ID ${batchId} from local history not found on the blockchain.`);
+                }
+            }
+
+            localStorage.setItem(key, JSON.stringify(verifiedBatches));
+            
+            grid.innerHTML = verifiedBatches.length === 0 ? '<p class="col-span-full text-center text-gray-500">Aapki abhi tak koi activity nahi hai.</p>' : '';
+            
+            verifiedBatches.forEach(batchId => {
+                const card = document.createElement('div');
+                card.className = 'text-center p-2 bg-gray-50 rounded-lg cursor-pointer hover:shadow-md';
+                card.onclick = () => { 
+                    document.getElementById('searchIdInput').value = batchId;
+                    this.search();
+                    window.scrollTo(0,0);
+                };
+                const canvas = document.createElement('canvas');
+                card.appendChild(canvas);
+                const idEl = document.createElement('p');
+                idEl.className = 'text-xs font-semibold text-gray-700 mt-2 break-all';
+                idEl.textContent = batchId;
+                card.appendChild(idEl);
+                grid.appendChild(card);
+                QRCode.toCanvas(canvas, batchId, { width: 150, margin: 1 });
+            });
+        }
+    };
+</script>
+</body>
+</html>

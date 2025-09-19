@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings - AyurTrace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="supabase-auth.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f4f7f6;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <img src="https://placehold.co/40x40/10B981/FFFFFF?text=A" alt="AyurTrace Logo" class="rounded-full">
+                <h1 class="text-2xl font-bold text-gray-800">Account Settings</h1>
+            </div>
+            <a href="javascript:history.back()" class="text-indigo-600 font-semibold hover:underline">
+                &larr; Back to Dashboard
+            </a>
+        </div>
+    </header>
+    
+    <main class="container mx-auto p-6">
+        <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-8 space-y-6">
+             <div>
+                <h2 class="text-xl font-bold text-gray-800">Your Information</h2>
+                <p class="text-gray-500 text-sm">Update your details here. This information is saved only in your browser.</p>
+            </div>
+            
+            <div>
+                <label for="actorId" class="block text-sm font-medium text-gray-700">Actor ID</label>
+                <input id="actorId" type="text" readonly class="mt-1 block w-full bg-gray-100 px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+            </div>
+            
+            <div>
+                <label for="fullName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                <input id="fullName" type="text" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            
+            <div>
+                <label for="phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                <input id="phone" type="tel" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+
+            <div>
+                <label for="address" class="block text-sm font-medium text-gray-700">Physical Address</label>
+                <input id="address" type="text" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                <input id="password" type="password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+
+            <div id="feedback" class="hidden p-4 rounded-md text-sm"></div>
+
+            <button id="saveBtn" class="w-full bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300">
+                Save Changes
+            </button>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check authentication
+            const user = await getCurrentUser();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Fetch current user data from Supabase
+            try {
+                const { data: userData, error } = await supabaseClient
+                    .from('users_plain')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                if (error) {
+                    console.error('Error fetching user data:', error);
+                    showFeedback('Error loading user data', 'error');
+                    return;
+                }
+
+                // Populate form with current data
+                document.getElementById('actorId').value = userData.actorId || '';
+                document.getElementById('fullName').value = userData.fullName || '';
+                document.getElementById('phone').value = userData.phone || '';
+                document.getElementById('address').value = userData.address || '';
+                document.getElementById('password').value = userData.password || '';
+            } catch (error) {
+                console.error('Error:', error);
+                showFeedback('Error loading user data', 'error');
+            }
+
+            // Save button functionality
+            document.getElementById('saveBtn').addEventListener('click', async () => {
+                const updatedData = {
+                    fullName: document.getElementById('fullName').value.trim(),
+                    phone: document.getElementById('phone').value.trim(),
+                    address: document.getElementById('address').value.trim(),
+                    password: document.getElementById('password').value
+                };
+
+                if (!updatedData.fullName || !updatedData.phone || !updatedData.address || !updatedData.password) {
+                    showFeedback('Please fill in all fields', 'error');
+                    return;
+                }
+
+                try {
+                    // Update in Supabase
+                    const { error } = await supabaseClient
+                        .from('users_plain')
+                        .update(updatedData)
+                        .eq('id', user.id);
+
+                    if (error) {
+                        console.error('Error updating user data:', error);
+                        showFeedback('Error saving changes', 'error');
+                        return;
+                    }
+
+                    // Update local session
+                    const updatedUser = {
+                        ...user,
+                        name: updatedData.fullName
+                    };
+                    sessionStorage.setItem('ayurtrace_user', JSON.stringify(updatedUser));
+
+                    showFeedback('Settings saved successfully!', 'success');
+                } catch (error) {
+                    console.error('Error:', error);
+                    showFeedback('Error saving changes', 'error');
+                }
+            });
+        });
+
+        function showFeedback(message, type) {
+            const feedbackEl = document.getElementById('feedback');
+            feedbackEl.className = `p-4 rounded-md text-sm ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+            feedbackEl.textContent = message;
+            feedbackEl.classList.remove('hidden');
+            
+            setTimeout(() => {
+                feedbackEl.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

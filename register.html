@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - AyurTrace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="theme.css">
+    <style>
+        body {
+            background-image: url('https://images.unsplash.com/photo-1536-252533360388-152694355435?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        .register-card {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8 register-card">
+            <div class="mb-8 text-center">
+                <a href="index.html" class="flex items-center justify-center space-x-3">
+                    <img src="assets/icons/ayutrace_logo_svg.svg" alt="AyurTrace Logo" style="height: 40px; width: auto;">
+                </a>
+            </div>
+
+            <h2 class="text-3xl font-bold text-dark-gray mb-4 text-center">Join AyurTrace</h2>
+            <p class="text-lg text-medium-gray mb-10 text-center">Create your account</p>
+
+            <div id="registerForm">
+                <div class="space-y-6">
+                    <div>
+                        <label for="registerActorId" class="block text-base font-medium text-gray-700">Actor ID / Email</label>
+                        <input id="registerActorId" type="text" placeholder="e.g., NEWFARM002" class="mt-2 block w-full input-field text-base">
+                    </div>
+                    <div>
+                        <label for="registerPassword" class="block text-base font-medium text-gray-700">Password</label>
+                        <input id="registerPassword" type="password" placeholder="********" class="mt-2 block w-full input-field text-base">
+                    </div>
+                    <div>
+                        <label for="registerConfirmPassword" class="block text-base font-medium text-gray-700">Confirm Password</label>
+                        <input id="registerConfirmPassword" type="password" placeholder="********" class="mt-2 block w-full input-field text-base">
+                    </div>
+                    <div>
+                        <label for="registerFullName" class="block text-base font-medium text-gray-700">Full Name</label>
+                        <input id="registerFullName" type="text" placeholder="e.g., John Doe" class="mt-2 block w-full input-field text-base">
+                    </div>
+                    <div>
+                        <label for="registerPhone" class="block text-base font-medium text-gray-700">Phone</label>
+                        <input id="registerPhone" type="text" placeholder="e.g., +1234567890" class="mt-2 block w-full input-field text-base">
+                    </div>
+                    <div>
+                        <label for="registerAddress" class="block text-base font-medium text-gray-700">Address</label>
+                        <input id="registerAddress" type="text" placeholder="e.g., 123 Main St, Anytown, USA" class="mt-2 block w-full input-field text-base">
+                    </div>
+                    <div>
+                        <label for="registerActorRole" class="block text-base font-medium text-gray-700">Select Your Role</label>
+                        <select id="registerActorRole" class="mt-2 block w-full input-field text-base">
+                            <option value="1">Farmer</option>
+                            <option value="2">Collector</option>
+                            <option value="3">Auditor</option>
+                            <option value="4">Manufacturer</option>
+                            <option value="5">Distributor</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="btnRegister" class="mt-8 w-full btn btn-primary text-lg">Register</button>
+            </div>
+
+            <div id="authFeedback" class="hidden p-4 rounded-md text-sm mt-4"></div>
+
+            <div class="text-center mt-6">
+                <p class="text-sm text-medium-gray">Already have an account? <a href="login.html" class="font-medium text-primary hover:underline">Sign In</a></p>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="index.html" class="text-sm font-medium text-primary hover:underline">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="supabase-auth.js"></script>
+    <script>
+        const UI = {
+            init() {
+                document.getElementById('btnRegister').addEventListener('click', () => this.register());
+                // Check if user is already logged in
+                this.checkAuthState();
+            },
+
+            async checkAuthState() {
+                const user = await getCurrentUser();
+                if (user) {
+                    // User is already logged in, redirect to home
+                    window.location.href = 'index.html';
+                }
+            },
+
+            showFeedback(elId, message, type) {
+                const el = document.getElementById(elId);
+                el.className = 'p-4 rounded-md text-sm mt-4';
+                if (type === 'success') el.classList.add('bg-green-100', 'text-green-800');
+                else if (type === 'error') el.classList.add('bg-red-100', 'text-red-800');
+                else el.classList.add('bg-blue-100', 'text-blue-800');
+                el.innerHTML = message;
+                el.style.display = 'block';
+            },
+
+            async register() {
+                const actorId = document.getElementById('registerActorId').value.trim();
+                const password = document.getElementById('registerPassword').value;
+                const confirmPassword = document.getElementById('registerConfirmPassword').value;
+                const fullName = document.getElementById('registerFullName').value.trim();
+                const phone = document.getElementById('registerPhone').value.trim();
+                const address = document.getElementById('registerAddress').value.trim();
+                const role = parseInt(document.getElementById('registerActorRole').value);
+
+                if (!actorId || !password || !confirmPassword || !fullName || !phone || !address) {
+                    return this.showFeedback('authFeedback', 'Please fill in all fields.', 'error');
+                }
+
+                if (password !== confirmPassword) {
+                    return this.showFeedback('authFeedback', 'Passwords do not match.', 'error');
+                }
+
+                if (password.length < 6) {
+                    return this.showFeedback('authFeedback', 'Password must be at least 6 characters long.', 'error');
+                }
+
+                this.showFeedback('authFeedback', 'Registering...', 'info');
+
+                try {
+                    const { user, error } = await signUp(actorId, password, role, fullName, phone, address);
+
+                    if (error) {
+                        console.error('Registration error:', error);
+                        let errorMessage = error.message || 'Registration failed. Please try again.';
+                        // Unique constraint
+                        if (error.code === '23505' || /unique/i.test(errorMessage)) {
+                            errorMessage = 'This Actor ID with the selected role already exists.';
+                        }
+                        return this.showFeedback('authFeedback', errorMessage, 'error');
+                    }
+
+                    this.showFeedback('authFeedback', 'Registration successful! Redirecting to login...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1200);
+                } catch (error) {
+                    console.error('Registration error:', error);
+                    this.showFeedback('authFeedback', 'Registration failed. Please try again.', 'error');
+                }
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => UI.init());
+    </script>
+</body>
+</html>

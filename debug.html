@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Blockchain Connection - AyurTrace</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/ethers.umd.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .section { background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 8px; border: 1px solid #dee2e6; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow: auto; max-height: 400px; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .status.success { background: #d4edda; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; border: 1px solid #f5c6cb; }
+        .status.info { background: #d1ecf1; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>AyurTrace Blockchain Debug Tool</h1>
+    
+    <div class="section">
+        <h2>1. Configuration Check</h2>
+        <div id="configStatus"></div>
+        <button onclick="checkConfig()">Check Configuration</button>
+    </div>
+
+    <div class="section">
+        <h2>2. Blockchain Connection</h2>
+        <div id="connectionStatus"></div>
+        <button onclick="testConnection()">Test Connection</button>
+    </div>
+
+    <div class="section">
+        <h2>3. Contract Interaction</h2>
+        <div id="contractStatus"></div>
+        <button onclick="testContract()">Test Contract</button>
+    </div>
+
+    <div class="section">
+        <h2>4. List All Batches</h2>
+        <div id="batchesStatus"></div>
+        <button onclick="listAllBatches()">List All Batches</button>
+    </div>
+
+    <div class="section">
+        <h2>5. Test Specific Batch</h2>
+        <input type="text" id="testBatchId" placeholder="Enter Batch ID (e.g., BATCH_1758203655425)" style="width: 300px; padding: 8px; margin: 10px 0;">
+        <button onclick="testSpecificBatch()">Test This Batch</button>
+        <div id="specificBatchStatus"></div>
+    </div>
+
+    <div class="section">
+        <h2>6. Recent Events</h2>
+        <div id="eventsStatus"></div>
+        <button onclick="checkRecentEvents()">Check Recent Events</button>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="blockchain.js"></script>
+    <script>
+        function addStatus(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            container.appendChild(div);
+        }
+
+        function clearStatus(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+
+        async function checkConfig() {
+            clearStatus('configStatus');
+            
+            try {
+                const cfg = window.config || window.AppConfig || {};
+                
+                addStatus('configStatus', `<strong>Ganache URL:</strong> ${cfg.GANACHE_URL || 'Not set'}`, cfg.GANACHE_URL ? 'success' : 'error');
+                addStatus('configStatus', `<strong>Contract Address:</strong> ${cfg.CONTRACT_ADDRESS || 'Not set'}`, cfg.CONTRACT_ADDRESS ? 'success' : 'error');
+                addStatus('configStatus', `<strong>Private Key:</strong> ${cfg.DEV_PRIVATE_KEY ? 'Set (' + cfg.DEV_PRIVATE_KEY.substring(0, 10) + '...)' : 'Not set'}`, cfg.DEV_PRIVATE_KEY ? 'success' : 'error');
+                addStatus('configStatus', `<strong>Contract ABI:</strong> ${cfg.CONTRACT_ABI ? cfg.CONTRACT_ABI.length + ' methods' : 'Not set'}`, cfg.CONTRACT_ABI ? 'success' : 'error');
+                
+            } catch (error) {
+                addStatus('configStatus', `Error checking config: ${error.message}`, 'error');
+            }
+        }
+
+        async function testConnection() {
+            clearStatus('connectionStatus');
+            addStatus('connectionStatus', 'Testing blockchain connection...', 'info');
+            
+            try {
+                const cfg = window.config || window.AppConfig || {};
+                const provider = new ethers.JsonRpcProvider(cfg.GANACHE_URL);
+                
+                // Test basic connection
+                const blockNumber = await provider.getBlockNumber();
+                addStatus('connectionStatus', `✅ Connected! Current block: ${blockNumber}`, 'success');
+                
+                // Test network
+                const network = await provider.getNetwork();
+                addStatus('connectionStatus', `📡 Network ID: ${network.chainId}`, 'success');
+                
+                // Test signer
+                if (cfg.DEV_PRIVATE_KEY) {
+                    const signer = new ethers.Wallet(cfg.DEV_PRIVATE_KEY, provider);
+                    const address = await signer.getAddress();
+                    const balance = await provider.getBalance(address);
+                    addStatus('connectionStatus', `💰 Signer Address: ${address}`, 'success');
+                    addStatus('connectionStatus', `💰 Balance: ${ethers.formatEther(balance)} ETH`, 'success');
+                }
+                
+            } catch (error) {
+                addStatus('connectionStatus', `❌ Connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testContract() {
+            clearStatus('contractStatus');
+            addStatus('contractStatus', 'Testing contract interaction...', 'info');
+            
+            try {
+                await Blockchain.init();
+                addStatus('contractStatus', '✅ Blockchain module initialized', 'success');
+                
+                // Test a simple read function
+                const cfg = window.config || window.AppConfig || {};
+                const contract = new ethers.Contract(cfg.CONTRACT_ADDRESS, cfg.CONTRACT_ABI, new ethers.JsonRpcProvider(cfg.GANACHE_URL));
+                
+                // Check if the contract exists
+                const code = await contract.runner.provider.getCode(cfg.CONTRACT_ADDRESS);
+                if (code === '0x') {
+                    addStatus('contractStatus', '❌ No contract found at this address', 'error');
+                } else {
+                    addStatus('contractStatus', `✅ Contract exists (${code.length} bytes)`, 'success');
+                }
+                
+            } catch (error) {
+                addStatus('contractStatus', `❌ Contract test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function listAllBatches() {
+            clearStatus('batchesStatus');
+            addStatus('batchesStatus', 'Searching for all batches...', 'info');
+            
+            try {
+                await Blockchain.init();
+                const batchIds = await Blockchain.debugListAllBatches();
+                
+                if (batchIds.length === 0) {
+                    addStatus('batchesStatus', '📭 No batches found in the contract', 'info');
+                    addStatus('batchesStatus', '💡 This might be why search is failing - there are no batches created yet!', 'info');
+                } else {
+                    addStatus('batchesStatus', `📦 Found ${batchIds.length} batches:`, 'success');
+                    batchIds.forEach((id, index) => {
+                        addStatus('batchesStatus', `${index + 1}. ${id}`, 'success');
+                    });
+                }
+                
+            } catch (error) {
+                addStatus('batchesStatus', `❌ Failed to list batches: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSpecificBatch() {
+            const batchId = document.getElementById('testBatchId').value.trim();
+            if (!batchId) {
+                alert('Please enter a batch ID');
+                return;
+            }
+            
+            clearStatus('specificBatchStatus');
+            addStatus('specificBatchStatus', `Testing batch: ${batchId}...`, 'info');
+            
+            try {
+                await Blockchain.init();
+                
+                // Test getBatchDetails
+                const details = await Blockchain.getBatchDetails(batchId);
+                if (details && details.batchId && details.batchId !== '') {
+                    addStatus('specificBatchStatus', '✅ Batch exists!', 'success');
+                    addStatus('specificBatchStatus', `<pre>${JSON.stringify(details, null, 2)}</pre>`, 'success');
+                } else {
+                    addStatus('specificBatchStatus', '❌ Batch does not exist', 'error');
+                }
+                
+                // Test getChainForBatch
+                const logs = await Blockchain.getChainForBatch(batchId);
+                addStatus('specificBatchStatus', `📊 Found ${logs ? logs.length : 0} events in chain`, logs && logs.length > 0 ? 'success' : 'info');
+                
+            } catch (error) {
+                addStatus('specificBatchStatus', `❌ Error testing batch: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkRecentEvents() {
+            clearStatus('eventsStatus');
+            addStatus('eventsStatus', 'Checking recent blockchain events...', 'info');
+            
+            try {
+                await Blockchain.init();
+                const cfg = window.config || window.AppConfig || {};
+                const contract = new ethers.Contract(cfg.CONTRACT_ADDRESS, cfg.CONTRACT_ABI, new ethers.JsonRpcProvider(cfg.GANACHE_URL));
+                
+                // Get current block
+                const currentBlock = await contract.runner.provider.getBlockNumber();
+                const fromBlock = Math.max(0, currentBlock - 100); // Last 100 blocks
+                
+                addStatus('eventsStatus', `🔍 Searching blocks ${fromBlock} to ${currentBlock}...`, 'info');
+                
+                // Check for any events
+                const allLogs = await contract.runner.provider.getLogs({
+                    address: cfg.CONTRACT_ADDRESS,
+                    fromBlock: fromBlock,
+                    toBlock: currentBlock
+                });
+                
+                addStatus('eventsStatus', `📋 Found ${allLogs.length} total events in recent blocks`, allLogs.length > 0 ? 'success' : 'info');
+                
+                if (allLogs.length > 0) {
+                    allLogs.slice(0, 5).forEach((log, index) => {
+                        try {
+                            const parsed = contract.interface.parseLog(log);
+                            addStatus('eventsStatus', `${index + 1}. ${parsed.name} in block ${log.blockNumber}`, 'success');
+                        } catch {
+                            addStatus('eventsStatus', `${index + 1}. Unknown event in block ${log.blockNumber}`, 'info');
+                        }
+                    });
+                }
+                
+            } catch (error) {
+                addStatus('eventsStatus', `❌ Error checking events: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run basic checks on load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkConfig();
+        });
+    </script>
+</body>
+</html>

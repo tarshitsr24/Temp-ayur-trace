@@ -1,0 +1,46 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="leafGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="40" cy="40" r="38" fill="#F0FDF4" stroke="url(#leafGradient2)" stroke-width="2"/>
+  
+  <!-- Journey path with leaves -->
+  <g transform="translate(40, 40)">
+    <!-- Winding path -->
+    <path d="M-25 -15 Q-10 -25, 0 -15 Q10 -5, 0 5 Q-10 15, 25 15" 
+          stroke="url(#pathGradient)" stroke-width="3" fill="none" stroke-linecap="round"/>
+    
+    <!-- Journey markers (leaves) -->
+    <!-- Start leaf -->
+    <g transform="translate(-25, -15) scale(0.6)">
+      <path d="M0 -8 C-4 -12, 4 -12, 0 -8 C-2 -6, 2 -6, 0 -8 Z" fill="url(#leafGradient2)"/>
+      <rect x="-1" y="-6" width="2" height="8" fill="url(#leafGradient2)" rx="1"/>
+    </g>
+    
+    <!-- Middle leaf -->
+    <g transform="translate(0, 5) scale(0.6)">
+      <path d="M0 -8 C-4 -12, 4 -12, 0 -8 C-2 -6, 2 -6, 0 -8 Z" fill="url(#leafGradient2)"/>
+      <rect x="-1" y="-6" width="2" height="8" fill="url(#leafGradient2)" rx="1"/>
+    </g>
+    
+    <!-- End leaf -->
+    <g transform="translate(25, 15) scale(0.6)">
+      <path d="M0 -8 C-4 -12, 4 -12, 0 -8 C-2 -6, 2 -6, 0 -8 Z" fill="url(#leafGradient2)"/>
+      <rect x="-1" y="-6" width="2" height="8" fill="url(#leafGradient2)" rx="1"/>
+    </g>
+    
+    <!-- Arrow pointing along path -->
+    <g transform="translate(20, 12) rotate(15)">
+      <path d="M0 0 L-6 -3 L-6 -1 L-12 -1 L-12 1 L-6 1 L-6 3 Z" fill="url(#leafGradient2)"/>
+    </g>
+  </g>
+</svg>

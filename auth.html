@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication - AyurTrace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="theme.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="supabase-auth.js"></script>
+    <style>
+        body {
+            background-image: url('https://images.unsplash.com/photo-1536252533360388-152694355435?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        .auth-card {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .tab-active {
+            background-color: #10B981;
+            color: white;
+        }
+        .tab-inactive {
+            background-color: #F3F4F6;
+            color: #6B7280;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8 auth-card">
+            <!-- Header -->
+            <div class="mb-8 text-center">
+                <a href="index.html" class="flex items-center justify-center space-x-3">
+                    <img src="https://placehold.co/50x50/10B981/FFFFFF?text=A" alt="AyurTrace Logo" class="rounded-full">
+                    <h1 class="text-3xl font-bold text-gray-800">AyurTrace</h1>
+                </a>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="flex mb-8 bg-gray-100 rounded-lg p-1">
+                <button id="loginTab" class="flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors tab-active">
+                    Sign In
+                </button>
+                <button id="signupTab" class="flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors tab-inactive">
+                    Sign Up
+                </button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginForm" class="space-y-6">
+                <h2 class="text-2xl font-bold text-dark-gray mb-4 text-center">Welcome Back</h2>
+                <p class="text-medium-gray mb-6 text-center">Sign in to your account</p>
+
+                <div>
+                    <label for="loginActorId" class="block text-sm font-medium text-gray-700">Actor ID / Email</label>
+                    <input id="loginActorId" type="text" placeholder="e.g., FARM001" class="mt-1 block w-full input-field">
+                </div>
+                <div>
+                    <label for="loginPassword" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input id="loginPassword" type="password" placeholder="Enter your password" class="mt-1 block w-full input-field">
+                </div>
+                <div>
+                    <label for="loginActorRole" class="block text-sm font-medium text-gray-700">Select Your Role</label>
+                    <select id="loginActorRole" class="mt-1 block w-full input-field">
+                        <option value="1">Farmer</option>
+                        <option value="2">Collector</option>
+                        <option value="3">Auditor</option>
+                        <option value="4">Manufacturer</option>
+                        <option value="5">Distributor</option>
+                    </select>
+                </div>
+                <button id="btnLogin" class="w-full btn btn-primary">Sign In</button>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="signupForm" class="space-y-6 hidden">
+                <h2 class="text-2xl font-bold text-dark-gray mb-4 text-center">Join AyurTrace</h2>
+                <p class="text-medium-gray mb-6 text-center">Create your account</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="signupActorId" class="block text-sm font-medium text-gray-700">Actor ID</label>
+                        <input id="signupActorId" type="text" placeholder="e.g., NEWFARM002" class="mt-1 block w-full input-field">
+                    </div>
+                    <div>
+                        <label for="signupFullName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input id="signupFullName" type="text" placeholder="John Doe" class="mt-1 block w-full input-field">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="signupPassword" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input id="signupPassword" type="password" placeholder="Min. 6 characters" class="mt-1 block w-full input-field">
+                    </div>
+                    <div>
+                        <label for="signupConfirmPassword" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                        <input id="signupConfirmPassword" type="password" placeholder="Confirm password" class="mt-1 block w-full input-field">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="signupPhone" class="block text-sm font-medium text-gray-700">Phone</label>
+                        <input id="signupPhone" type="text" placeholder="+1234567890" class="mt-1 block w-full input-field">
+                    </div>
+                    <div>
+                        <label for="signupActorRole" class="block text-sm font-medium text-gray-700">Role</label>
+                        <select id="signupActorRole" class="mt-1 block w-full input-field">
+                            <option value="1">Farmer</option>
+                            <option value="2">Collector</option>
+                            <option value="3">Auditor</option>
+                            <option value="4">Manufacturer</option>
+                            <option value="5">Distributor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="signupAddress" class="block text-sm font-medium text-gray-700">Address</label>
+                    <input id="signupAddress" type="text" placeholder="123 Main St, City, Country" class="mt-1 block w-full input-field">
+                </div>
+
+                <button id="btnSignup" class="w-full btn btn-primary">Create Account</button>
+            </div>
+
+            <!-- Feedback -->
+            <div id="authFeedback" class="hidden p-4 rounded-md text-sm mt-6"></div>
+
+            <!-- Back to Home -->
+            <div class="text-center mt-6">
+                <a href="index.html" class="text-sm font-medium text-primary hover:underline">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const AuthUI = {
+            isLoginMode: true,
+
+            init() {
+                this.bindEvents();
+                this.checkAuthState();
+            },
+
+            bindEvents() {
+                document.getElementById('loginTab').addEventListener('click', () => this.switchToLogin());
+                document.getElementById('signupTab').addEventListener('click', () => this.switchToSignup());
+                document.getElementById('btnLogin').addEventListener('click', () => this.login());
+                document.getElementById('btnSignup').addEventListener('click', () => this.signup());
+                
+                // Allow Enter key to submit forms
+                document.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        if (this.isLoginMode) {
+                            this.login();
+                        } else {
+                            this.signup();
+                        }
+                    }
+                });
+            },
+
+            async checkAuthState() {
+                const user = await getCurrentUser();
+                if (user) {
+                    this.handleSuccessfulAuth(user);
+                }
+            },
+
+            switchToLogin() {
+                this.isLoginMode = true;
+                document.getElementById('loginTab').className = 'flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors tab-active';
+                document.getElementById('signupTab').className = 'flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors tab-inactive';
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('signupForm').classList.add('hidden');
+                this.clearFeedback();
+            },
+
+            switchToSignup() {
+                this.isLoginMode = false;
+                document.getElementById('loginTab').className = 'flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors tab-inactive';
+                document.getElementById('signupTab').className = 'flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors tab-active';
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('signupForm').classList.remove('hidden');
+                this.clearFeedback();
+            },
+
+            showFeedback(message, type) {
+                const el = document.getElementById('authFeedback');
+                el.className = 'p-4 rounded-md text-sm mt-6';
+                if (type === 'success') el.classList.add('bg-green-100', 'text-green-800');
+                else if (type === 'error') el.classList.add('bg-red-100', 'text-red-800');
+                else el.classList.add('bg-blue-100', 'text-blue-800');
+                el.innerHTML = message;
+                el.classList.remove('hidden');
+            },
+
+            clearFeedback() {
+                document.getElementById('authFeedback').classList.add('hidden');
+            },
+
+            handleSuccessfulAuth(userData) {
+                sessionStorage.setItem('ayurtrace_user', JSON.stringify(userData));
+                
+                let redirectUrl = '';
+                switch (userData.role) {
+                    case 1: redirectUrl = 'farmer.html'; break;
+                    case 2: redirectUrl = 'collector.html'; break;
+                    case 3: redirectUrl = 'auditor.html'; break;
+                    case 4: redirectUrl = 'manufacturer_dash.html'; break;
+                    case 5: redirectUrl = 'distributor.html'; break;
+                    default: redirectUrl = 'index.html';
+                }
+                window.location.href = redirectUrl;
+            },
+
+            async login() {
+                const actorId = document.getElementById('loginActorId').value.trim();
+                const password = document.getElementById('loginPassword').value;
+                const role = parseInt(document.getElementById('loginActorRole').value);
+
+                if (!actorId || !password) {
+                    return this.showFeedback('Please enter Actor ID and Password.', 'error');
+                }
+
+                this.showFeedback('Logging in...', 'info');
+                
+                try {
+                    const user = await signIn(actorId, password, role);
+
+                    if (!user) {
+                        return this.showFeedback('Incorrect Actor ID, Password, or Role.', 'error');
+                    }
+
+                    this.showFeedback('Login successful! Redirecting...', 'success');
+                    setTimeout(() => this.handleSuccessfulAuth(user), 1000);
+                } catch (error) {
+                    console.error('Login error:', error);
+                    this.showFeedback('Login failed. Please try again.', 'error');
+                }
+            },
+
+            async signup() {
+                const actorId = document.getElementById('signupActorId').value.trim();
+                const password = document.getElementById('signupPassword').value;
+                const confirmPassword = document.getElementById('signupConfirmPassword').value;
+                const fullName = document.getElementById('signupFullName').value.trim();
+                const phone = document.getElementById('signupPhone').value.trim();
+                const address = document.getElementById('signupAddress').value.trim();
+                const role = parseInt(document.getElementById('signupActorRole').value);
+
+                if (!actorId || !password || !confirmPassword || !fullName || !phone || !address) {
+                    return this.showFeedback('Please fill in all fields.', 'error');
+                }
+
+                if (password !== confirmPassword) {
+                    return this.showFeedback('Passwords do not match.', 'error');
+                }
+
+                if (password.length < 6) {
+                    return this.showFeedback('Password must be at least 6 characters long.', 'error');
+                }
+
+                this.showFeedback('Creating account...', 'info');
+
+                try {
+                    const { user, error } = await signUp(actorId, password, role, fullName, phone, address);
+
+                    if (error) {
+                        console.error('Registration error:', error);
+                        let errorMessage = 'Registration failed. Please try again.';
+                        
+                        if (error.message.includes('email')) {
+                            errorMessage = 'This Actor ID is already registered. Please use a different one.';
+                        } else if (error.message.includes('password')) {
+                            errorMessage = 'Password does not meet requirements. Please use a stronger password.';
+                        }
+                        
+                        return this.showFeedback(errorMessage, 'error');
+                    }
+
+                    this.showFeedback('Account created successfully! You can now sign in.', 'success');
+                    setTimeout(() => {
+                        this.switchToLogin();
+                        document.getElementById('loginActorId').value = actorId;
+                        document.getElementById('loginActorRole').value = role;
+                    }, 2000);
+                } catch (error) {
+                    console.error('Registration error:', error);
+                    this.showFeedback('Registration failed. Please try again.', 'error');
+                }
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => AuthUI.init());
+    </script>
+</body>
+</html>

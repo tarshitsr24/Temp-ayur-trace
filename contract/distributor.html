@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributor Dashboard - AyurTrace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="theme.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="supabase-auth.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="index.html" class="logo">
+                    <i class="fas fa-seedling"></i>
+                    AyuTrace
+                </a>
+                <div class="nav-links">
+                    <a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a>
+                    <a href="#"><i class="fas fa-history"></i> History</a>
+                </div>
+                <div class="user-menu">
+                    <div class="user-avatar" id="userAvatar">--</div>
+                    <span id="userName">Loading...</span>
+                    <div class="dropdown">
+                        <i class="fas fa-chevron-down"></i>
+                        <div class="dropdown-content">
+                            <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
+                            <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <section class="welcome-section">
+                <div class="welcome-content">
+                    <div class="welcome-text">
+                        <h1>Distributor Dashboard</h1>
+                        <p>Manage product inventory and dispatch.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-box-open"></i> Record Reception</h2>
+                </div>
+                <form id="receptionForm">
+                    <div class="form-group">
+                        <label for="receptionBatchId">Batch ID</label>
+                        <input type="text" id="receptionBatchId" class="input-field" placeholder="Enter Batch ID...">
+                    </div>
+                    <div class="form-group">
+                        <label for="herbType">Herb Type</label>
+                        <input type="text" id="herbType" class="input-field" placeholder="Enter Herb Type...">
+                    </div>
+                    <div class="form-group">
+                        <label for="receptionQuantity">Quantity</label>
+                        <input type="number" id="receptionQuantity" class="input-field" placeholder="Enter quantity...">
+                    </div>
+                    <div class="form-group">
+                        <label for="storageLocation">Storage Location</label>
+                        <input type="text" id="storageLocation" class="input-field" placeholder="e.g., A1">
+                    </div>
+                    <button type="submit" class="submit-btn">Record Reception</button>
+                </form>
+            </section>
+
+            <section class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-truck"></i> Record Dispatch</h2>
+                </div>
+                <form id="dispatchForm">
+                    <div class="form-group">
+                        <label for="dispatchBatchId">Batch ID</label>
+                        <input type="text" id="dispatchBatchId" class="input-field" placeholder="Enter Batch ID...">
+                    </div>
+                    <div class="form-group">
+                        <label for="dispatchQuantity">Quantity to Dispatch</label>
+                        <input type="number" id="dispatchQuantity" class="input-field" placeholder="Enter quantity...">
+                    </div>
+                    <div class="form-group">
+                        <label for="destination">Destination</label>
+                        <input type="text" id="destination" class="input-field" placeholder="Enter destination...">
+                    </div>
+                    <button type="submit" class="submit-btn">Record Dispatch</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.3/dist/web3.min.js"></script>
+    <script src="config.js"></script>
+    <script src="supabase-auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const web3 = new Web3(window.config.GANACHE_URL);
+            const contract = new web3.eth.Contract(window.config.CONTRACT_ABI, window.config.CONTRACT_ADDRESS);
+
+            const receptionForm = document.getElementById('receptionForm');
+            const dispatchForm = document.getElementById('dispatchForm');
+
+            receptionForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const batchId = document.getElementById('receptionBatchId').value;
+                const herbType = document.getElementById('herbType').value;
+                const quantity = document.getElementById('receptionQuantity').value;
+                const storageLocation = document.getElementById('storageLocation').value;
+
+                try {
+                    const accounts = await web3.eth.getAccounts();
+                    await contract.methods.recordReception(batchId, herbType, quantity, storageLocation).send({ from: accounts[0] });
+                    alert("Reception recorded successfully!");
+                    receptionForm.reset();
+                } catch (error) {
+                    console.error("Error recording reception:", error);
+                    alert("Failed to record reception.");
+                }
+            });
+
+            dispatchForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const batchId = document.getElementById('dispatchBatchId').value;
+                const quantity = document.getElementById('dispatchQuantity').value;
+                const destination = document.getElementById('destination').value;
+
+                try {
+                    const accounts = await web3.eth.getAccounts();
+                    await contract.methods.recordDispatch(batchId, quantity, destination).send({ from: accounts[0] });
+                    alert("Dispatch recorded successfully!");
+                    dispatchForm.reset();
+                } catch (error) {
+                    console.error("Error recording dispatch:", error);
+                    alert("Failed to record dispatch.");
+                }
+            });
+        });
+
+        // Authentication and user management
+        async function initUserSession() {
+            const user = await getCurrentUser();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // Update user display
+            const userAvatar = document.getElementById('userAvatar');
+            const userName = document.getElementById('userName');
+            
+            if (userAvatar && userName) {
+                userAvatar.textContent = user.name ? user.name.substring(0, 2).toUpperCase() : user.actorId.substring(0, 2).toUpperCase();
+                userName.textContent = user.name || user.actorId;
+            }
+        }
+
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await signOut();
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initUserSession();
+        });
+    </script>
+</body>
+</html>

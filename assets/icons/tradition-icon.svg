@@ -1,0 +1,30 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="traditionGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Traditional leaf with stem -->
+  <g transform="translate(20, 20)">
+    <!-- Main stem -->
+    <rect x="-1" y="0" width="2" height="15" fill="url(#traditionGradient)" rx="1"/>
+    
+    <!-- Traditional wisdom leaf pattern -->
+    <path d="M0 -15 C-8 -18, -12 -8, -8 0 C-4 4, 0 0, 0 0 C0 0, 4 4, 8 0 C12 -8, 8 -18, 0 -15 Z" 
+          fill="url(#traditionGradient)"/>
+    
+    <!-- Ancient pattern lines -->
+    <path d="M-6 -10 Q0 -8, 6 -10" stroke="#059669" stroke-width="1" fill="none"/>
+    <path d="M-4 -6 Q0 -4, 4 -6" stroke="#059669" stroke-width="1" fill="none"/>
+    
+    <!-- Small decorative leaves -->
+    <g transform="translate(-10, 8) scale(0.3)">
+      <path d="M0 -8 C-4 -12, 4 -12, 0 -8 C-2 -6, 2 -6, 0 -8 Z" fill="url(#traditionGradient)"/>
+    </g>
+    <g transform="translate(10, 8) scale(0.3)">
+      <path d="M0 -8 C-4 -12, 4 -12, 0 -8 C-2 -6, 2 -6, 0 -8 Z" fill="url(#traditionGradient)"/>
+    </g>
+  </g>
+</svg>

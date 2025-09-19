@@ -1,0 +1,24 @@
+/* Minimal, neutral theme that won't clash with stakeholder pages */
+:root{
+  --bg:#0b0c0e; --surface:#121418; --surface-2:#161a20; --accent:#34c759; --accent-10:#28a745;
+  --text:#e6e6e6; --muted:#a0a4ab; --border:#262a32;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+
+.auth-container{min-height:100%;display:grid;place-items:center;padding:32px}
+.card{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.card h1{margin:0 0 6px;font-size:24px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+
+.form{display:grid;gap:12px;margin-top:16px}
+label{display:grid;gap:6px}
+input,select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text)}
+button{padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer}
+button.primary{background:var(--accent);border-color:transparent;color:#0a0a0a;font-weight:600}
+button.ghost{background:transparent}
+button:hover{filter:brightness(1.1)}
+
+.error{color:#ff7676;margin:8px 0 0}

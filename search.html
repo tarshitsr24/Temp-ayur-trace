@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Trace - AyurTrace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/ethers.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .timeline-item:last-child .timeline-line { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div id="appLoader" class="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-indigo-600 mx-auto"></div>
+            <h2 class="text-2xl font-semibold text-gray-700 mt-4">Loading Product History...</h2>
+            <p class="text-gray-500">Connecting to the blockchain.</p>
+        </div>
+    </div>
+    
+    <div id="appContent" class="hidden">
+        <header class="bg-white shadow-md sticky top-0 z-40">
+            <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+                <a href="index.html" class="text-xl font-bold text-gray-800">AyurTrace</a>
+                <a href="login.html" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm">Stakeholder Login</a>
+            </div>
+        </header>
+
+        <main class="container mx-auto p-4 md:p-6">
+            <section id="searchResults" class="bg-white p-6 rounded-2xl shadow-lg">
+                <h2 class="text-2xl font-bold text-gray-800">Supply Chain History</h2>
+                <p id="searchResultId" class="text-gray-500 mb-4">Serial Number: -</p>
+                <div id="searchResultTrace" class="relative pl-6 border-l-2 border-gray-200">
+                    <p>Enter a Serial Number in the URL (e.g., search.html#00125) to see the history.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="blockchain.js"></script>
+    <script>
+    const App = {
+        async init() {
+            const connected = await Blockchain.init();
+            document.getElementById('appLoader').classList.add('hidden');
+            document.getElementById('appContent').classList.remove('hidden');
+
+            if (connected) {
+                this.handleURLHash();
+                window.addEventListener('hashchange', () => this.handleURLHash());
+            }
+        },
+
+        handleURLHash() {
+            const serialNumber = window.location.hash.substring(1);
+            if (serialNumber) {
+                document.getElementById('searchResultId').textContent = `Serial Number: ${serialNumber}`;
+                this.search(serialNumber);
+            }
+        },
+
+        async search(serialNumber) {
+            this.currentSerialNumber = serialNumber;
+            const traceContainer = document.getElementById('searchResultTrace');
+            traceContainer.innerHTML = '<p>🔍 Searching blockchain for serial number...</p>';
+
+            try {
+                // First check if this serial number maps to a batch ID
+                const serialMapping = JSON.parse(localStorage.getItem('serial_mapping') || '{}');
+                let batchId = serialMapping[serialNumber];
+                
+                // If no mapping found, assume serialNumber is directly a batch ID
+                if (!batchId) {
+                    batchId = serialNumber;
+                }
+                
+                console.log(`Searching for serial: ${serialNumber}, mapped to batch: ${batchId}`);
+                
+                const logs = await Blockchain.getChainForBatch(batchId);
+                console.log(`Found ${logs ? logs.length : 0} events`);
+                
+                if (!logs || logs.length === 0) {
+                    traceContainer.innerHTML = `
+                        <div class="p-6 text-center">
+                            <div class="text-red-500 mb-4">
+                                <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
+                                <h3 class="text-lg font-semibold">No history found for Batch ID: ${batchId}</h3>
+                            </div>
+                            <p class="text-gray-500 mb-4">The batch may not exist or hasn't been processed yet</p>
+                            <div class="text-sm text-gray-400">
+                                <p>Serial Number: ${serialNumber}</p>
+                                <p>Mapped to Batch ID: ${batchId}</p>
+                                <p>Please check if the batch ID is correct or try again later.</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                this.renderChainFromLogs(batchId, logs, traceContainer);
+            } catch (e) {
+                console.error('Search error:', e);
+                traceContainer.innerHTML = `
+                    <div class="p-6 text-center">
+                        <div class="text-red-600 mb-4">
+                            <i class="fas fa-exclamation-circle text-4xl mb-2"></i>
+                            <h3 class="text-lg font-semibold">Search Error</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">Could not retrieve data. Please check the Serial Number and your connection.</p>
+                        <div class="text-sm text-gray-500 bg-gray-100 p-3 rounded">
+                            <p><strong>Serial Number:</strong> ${serialNumber}</p>
+                            <p><strong>Error:</strong> ${e.message}</p>
+                            <p><strong>Suggestion:</strong> Try refreshing the page or check your internet connection.</p>
+                        </div>
+                    </div>
+                `;
+            }
+        },
+        renderChainFromLogs(batchId, logs, container) {
+            const icon = { 
+                BatchCreated: '🌾', 
+                CollectionAdded: '👷', 
+                InspectionAdded: '🕵️', 
+                ProductCreated: '🏭', 
+                ProductReceived: '📦', 
+                ProductDispatched: '🚚' 
+            };
+            let html = '';
+            logs.forEach(l => {
+                const name = l.fragment?.name || 'Event';
+                const ts = l.args?.timestamp || l.args?.collectionDate || l.args?.date || null;
+                const when = ts ? new Date(Number(ts) * (ts > 1e12 ? 1 : 1000)).toLocaleString() : '';
+                
+                let description = '';
+                if (name === 'BatchCreated' && l.args) {
+                    const meta = Blockchain?.parseFarmLocationMeta ? Blockchain.parseFarmLocationMeta(l.args.farmLocation || '') : {};
+                    const farmer = meta.farmer || 'Unknown Farmer';
+                    const baseLoc = meta.base || (l.args.farmLocation || 'Not specified');
+                    description = `${l.args.cropType} • ${l.args.quantity} kg • Location: ${baseLoc} • Farmer: ${farmer}`;
+                    const imageHash = meta.ipfs || l.args.photoHash;
+                    if (imageHash && Blockchain?.getImageFromPinata) {
+                        description += `<br><div style="margin-top:8px;"><img src="${Blockchain.getImageFromPinata(imageHash)}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #e5e7eb;" onclick="showFullImage('${imageHash}')" title="Click to view full image" /><span style="margin-left:8px;color:#3b82f6;cursor:pointer;" onclick="showFullImage('${imageHash}')"><i class="fas fa-expand"></i> View Full</span></div>`;
+                    }
+                } else {
+                    description = JSON.stringify(l.args, null, 2);
+                }
+                
+                html += `
+                <div class="timeline-item flex gap-4 pb-8">
+                    <div class="flex flex-col items-center">
+                        <div class="bg-indigo-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl">${icon[name] || '⛓️'}</div>
+                        <div class="timeline-line w-0.5 h-full bg-gray-200"></div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg flex-1">
+                        <p class="font-bold text-gray-800">${name}</p>
+                        ${when ? `<p class="text-xs text-gray-400 mb-2">${when}</p>` : ''}
+                        <div class="text-xs text-gray-600">${description}</div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = `<p class="text-sm text-gray-500 mb-4">History for Serial Number: ${this.currentSerialNumber} (Batch ID: ${batchId})</p>` + html;
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => App.init());
+
+    function showFullImage(ipfsHash) {
+        if (!ipfsHash) return;
+        const fullUrl = Blockchain.getImageFromPinata(ipfsHash);
+        
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        overlay.onclick = (e) => {
+            if (e.target === overlay) overlay.remove();
+        };
+        
+        // Create modal content
+        const modal = document.createElement('div');
+        modal.className = 'bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-auto';
+        modal.innerHTML = `
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Image Preview</h3>
+                <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <img src="${fullUrl}" class="max-w-full h-auto rounded-lg" alt="Full image" />
+        `;
+        
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+    }
+    </script>
+</body>
+</html>

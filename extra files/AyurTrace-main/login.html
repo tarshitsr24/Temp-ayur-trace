@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - AyurTrace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="theme.css">
+    <style>
+        body {
+            background-image: url('https://images.unsplash.com/photo-1536-252533360388-152694355435?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        .login-card {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8 login-card">
+            <div class="mb-8 text-center">
+                <a href="index.html" class="flex items-center justify-center space-x-3">
+                    <img src="https://placehold.co/50x50/006A4E/FFFFFF?text=A" alt="AyurTrace Logo" class="rounded-full">
+                    <h1 class="text-3xl font-bold text-gray-800">AyurTrace</h1>
+                </a>
+            </div>
+
+            <h2 class="text-3xl font-bold text-dark-gray mb-4 text-center">Welcome Back</h2>
+            <p class="text-lg text-medium-gray mb-10 text-center">Sign in to your account</p>
+
+            <div id="loginForm">
+                <div class="space-y-6">
+                    <div>
+                        <label for="loginActorId" class="block text-base font-medium text-gray-700">Actor ID / Email</label>
+                        <input id="loginActorId" type="text" placeholder="e.g., FARM001" class="mt-2 block w-full input-field text-base">
+                    </div>
+                    <div>
+                        <label for="loginPassword" class="block text-base font-medium text-gray-700">Password</label>
+                        <input id="loginPassword" type="password" placeholder="********" class="mt-2 block w-full input-field text-base">
+                    </div>
+                    <div>
+                        <label for="loginActorRole" class="block text-base font-medium text-gray-700">Select Your Role</label>
+                        <select id="loginActorRole" class="mt-2 block w-full input-field text-base">
+                            <option value="1">Farmer</option>
+                            <option value="2">Collector</option>
+                            <option value="3">Auditor</option>
+                            <option value="4">Manufacturer</option>
+                            <option value="5">Distributor</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="btnLogin" class="mt-8 w-full btn btn-primary text-lg">Sign In</button>
+            </div>
+
+            <div id="authFeedback" class="hidden p-4 rounded-md text-sm mt-4"></div>
+
+            <div class="text-center mt-6">
+                <p class="text-sm text-medium-gray">Don't have an account? <a href="register.html" class="font-medium text-primary-green hover:underline">Create one</a></p>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="index.html" class="text-sm font-medium text-primary-green hover:underline">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="supabase-auth.js"></script>
+    <script>
+        const UI = {
+            init() {
+                document.getElementById('btnLogin').addEventListener('click', () => this.login());
+            },
+
+            showFeedback(elId, message, type) {
+                const el = document.getElementById(elId);
+                el.className = 'p-4 rounded-md text-sm mt-4';
+                if (type === 'success') el.classList.add('bg-green-100', 'text-green-800');
+                else if (type === 'error') el.classList.add('bg-red-100', 'text-red-800');
+                else el.classList.add('bg-blue-100', 'text-blue-800');
+                el.innerHTML = message;
+                el.style.display = 'block';
+            },
+            
+            handleSuccessfulAuth(userData) {
+                const userKey = `ayurtrace_user_${userData.actorId}_${userData.role}`;
+                localStorage.setItem(userKey, JSON.stringify(userData));
+                sessionStorage.setItem('ayurtrace_currentUserKey', userKey);
+                let redirectUrl = '';
+                switch (userData.role) {
+                    case 1: // Farmer
+                        redirectUrl = 'stakeholders/farmer.html';
+                        break;
+                    case 2: // Collector
+                        redirectUrl = 'stakeholders/collector.html';
+                        break;
+                    case 3: // Auditor
+                        redirectUrl = 'stakeholders/auditor.html';
+                        break;
+                    case 4: // Manufacturer
+                        redirectUrl = 'stakeholders/manufacturer_dash.html';
+                        break;
+                    case 5: // Distributor
+                        redirectUrl = 'stakeholders/distributor.html';
+                        break;
+                    default:
+                        redirectUrl = 'index.html'; // Fallback
+                }
+                window.location.href = redirectUrl;
+            },
+
+            async login() {
+                const actorId = document.getElementById('loginActorId').value.trim();
+                const password = document.getElementById('loginPassword').value;
+                const role = parseInt(document.getElementById('loginActorRole').value);
+
+                if (!actorId || !password) {
+                    return this.showFeedback('authFeedback', "Please enter Actor ID and Password.", 'error');
+                }
+
+                this.showFeedback('authFeedback', 'Logging in...', 'info');
+                const storedUser = await signIn(actorId, password, role);
+
+                if (!storedUser) {
+                    return this.showFeedback('authFeedback', 'Incorrect Actor ID, Password, or Role.', 'error');
+                }
+
+                this.showFeedback('authFeedback', 'Login successful! Redirecting...', 'success');
+                setTimeout(() => this.handleSuccessfulAuth(storedUser), 1000);
+            },
+        };
+
+        // Attach event listeners after the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => UI.init());
+    </script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collector Dashboard - AyurTrace</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+        <div class="logo">
+            <h1>AyurTrace</h1>
+        </div>
+        <nav>
+            <a href="#" class="active">Dashboard</a>
+            <a href="#">Logout</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <div class="dashboard-header">
+            <h2><i class="fas fa-home"></i> Collector Dashboard</h2>
+            <p>Manage batch collections and forward them for auditing.</p>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="card" id="collection-card">
+                <h3 class="card-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Collect New Batch
+                </h3>
+                <form id="collect-form">
+                    <div class="form-group">
+                        <label for="batch-id">Scan/Enter Farmer Batch ID</label>
+                        <div class="input-group">
+                            <input type="text" id="batch-id" placeholder="e.g., FR123-20250908" required>
+                            <button type="button" id="fetch-details-btn">Fetch</button>
+                        </div>
+                        <p id="batch-error" class="error-message"></p>
+                    </div>
+
+                    <div class="batch-details">
+                        <div class="form-group">
+                            <label>Crop</label>
+                            <input type="text" id="crop-details" placeholder="-" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Farmer</label>
+                            <input type="text" id="farmer-details" placeholder="-" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label for="collection-date">Collection Date</label>
+                            <input type="date" id="collection-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="quantity">Confirm Received Quantity (kg)</label>
+                            <input type="number" id="quantity" min="0" step="0.1" placeholder="e.g., 100" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submit-collection-btn" disabled>Confirm & Forward to
+                        Auditor</button>
+                </form>
+            </div>
+
+            <div class="card" id="history-card">
+                <h3 class="card-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-6l-2 3h-4l-2-3H2"></path>
+                        <path
+                            d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z">
+                        </path>
+                    </svg>
+                    Collected Batches
+                </h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Batch ID</th>
+                                <th>Crop</th>
+                                <th>Farmer</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="collected-batches-table">
+                            <tr class="placeholder">
+                                <td colspan="5">No batches collected yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const availableBatches = {
+                'FR123-20250908': { crop: 'Rice, 100kg', farmer: 'Ramesh (FR123)' },
+                'FR456-20250910': { crop: 'Ashwagandha, 250kg', farmer: 'Priya (FR456)' },
+                'FR789-20250911': { crop: 'Turmeric, 150kg', farmer: 'Suresh (FR789)' }
+            };
+
+            const form = document.getElementById('collect-form');
+            const fetchBtn = document.getElementById('fetch-details-btn');
+            const batchIdInput = document.getElementById('batch-id');
+            const cropDetailsInput = document.getElementById('crop-details');
+            const farmerDetailsInput = document.getElementById('farmer-details');
+            const collectionDateInput = document.getElementById('collection-date');
+            const quantityInput = document.getElementById('quantity');
+            const submitBtn = document.getElementById('submit-collection-btn');
+            const batchError = document.getElementById('batch-error');
+            const tableBody = document.getElementById('collected-batches-table');
+
+            fetchBtn.addEventListener('click', fetchBatchDetails);
+            batchIdInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    fetchBatchDetails();
+                }
+            });
+            form.addEventListener('submit', handleFormSubmit);
+
+            quantityInput.addEventListener('input', () => {
+                if (quantityInput.value < 0) {
+                    quantityInput.value = '';
+                }
+            });
+
+            function fetchBatchDetails() {
+                const batchId = batchIdInput.value.trim();
+                clearBatchDetails();
+                if (availableBatches[batchId]) {
+                    const batch = availableBatches[batchId];
+                    cropDetailsInput.value = batch.crop;
+                    farmerDetailsInput.value = batch.farmer;
+                    batchError.textContent = '';
+                    submitBtn.disabled = false;
+                    collectionDateInput.value = new Date().toISOString().split('T')[0];
+                } else if (batchId === '') {
+                    batchError.textContent = 'Please enter a Batch ID.';
+                } else {
+                    batchError.textContent = 'Batch ID not found.';
+                }
+            }
+
+            function handleFormSubmit(event) {
+                event.preventDefault();
+                const batchData = {
+                    batchId: batchIdInput.value.trim(),
+                    crop: cropDetailsInput.value,
+                    farmer: farmerDetailsInput.value,
+                    collectionDate: new Date(collectionDateInput.value).toLocaleDateString('en-GB'),
+                    status: 'Sent to Auditor'
+                };
+                addBatchToTable(batchData);
+                delete availableBatches[batchData.batchId];
+                resetForm();
+            }
+
+            function addBatchToTable(data) {
+                const placeholder = tableBody.querySelector('.placeholder');
+                if (placeholder) {
+                    placeholder.remove();
+                }
+                const newRow = document.createElement('tr');
+                newRow.classList.add('row-fade-in');
+                newRow.innerHTML = `
+                    <td>${data.batchId}</td>
+                    <td>${data.crop.split(',')[0]}</td>
+                    <td>${data.farmer}</td>
+                    <td>${data.collectionDate}</td>
+                    <td><span class="status">${data.status}</span></td>
+                `;
+                tableBody.prepend(newRow);
+            }
+
+            function clearBatchDetails() {
+                cropDetailsInput.value = '';
+                farmerDetailsInput.value = '';
+                submitBtn.disabled = true;
+            }
+
+            function resetForm() {
+                form.reset();
+                clearBatchDetails();
+                batchError.textContent = '';
+            }
+        });
+    </script>
+</body>
+
+</html>

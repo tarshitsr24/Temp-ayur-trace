@@ -1,0 +1,39 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="instantGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Lightning-fast leaf -->
+  <g transform="translate(20, 20)">
+    <!-- Main leaf with lightning pattern -->
+    <path d="M0 -15 C-6 -18, -10 -8, -6 0 C-3 4, 0 0, 0 0 C0 0, 3 4, 6 0 C10 -8, 6 -18, 0 -15 Z" 
+          fill="url(#instantGradient)"/>
+    
+    <!-- Lightning bolt overlay -->
+    <path d="M-2 -12 L1 -6 L-1 -6 L2 0 L-1 0 L1 6" 
+          stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Speed lines -->
+    <g opacity="0.7">
+      <path d="M8 -10 L14 -10" stroke="url(#instantGradient)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M10 -6 L16 -6" stroke="url(#instantGradient)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M8 -2 L14 -2" stroke="url(#instantGradient)" stroke-width="2" stroke-linecap="round"/>
+      
+      <path d="M-14 -10 L-8 -10" stroke="url(#instantGradient)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M-16 -6 L-10 -6" stroke="url(#instantGradient)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M-14 -2 L-8 -2" stroke="url(#instantGradient)" stroke-width="2" stroke-linecap="round"/>
+    </g>
+    
+    <!-- Stem -->
+    <rect x="-1" y="0" width="2" height="10" fill="url(#instantGradient)" rx="1"/>
+    
+    <!-- Small energy particles -->
+    <circle cx="8" cy="2" r="1" fill="url(#instantGradient)"/>
+    <circle cx="-8" cy="2" r="1" fill="url(#instantGradient)"/>
+    <circle cx="6" cy="6" r="1" fill="url(#instantGradient)"/>
+    <circle cx="-6" cy="6" r="1" fill="url(#instantGradient)"/>
+  </g>
+</svg>

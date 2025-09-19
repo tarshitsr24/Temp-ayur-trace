@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AyurTrace - Authentic Ayurvedic Transparency</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="theme.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/ethers.umd.min.js"></script>
+    <script src="blockchain.js"></script>
+    <script src="supabase-auth.js"></script>
+</head>
+<body class="bg-white">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
+            <div class="flex justify-between items-center">
+                <!-- Logo section -->
+                <div class="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
+                    <img src="assets/icons/ayutrace_logo_svg.svg" alt="AyurTrace Logo" class="h-7 sm:h-8 lg:h-10 w-auto">
+                    <h1 class="text-base sm:text-lg lg:text-2xl font-bold text-gray-800 hidden xs:block">AyurTrace</h1>
+                </div>
+                
+                <!-- Desktop Navigation -->
+                <nav class="hidden lg:flex items-center space-x-6 xl:space-x-8">
+                    <a href="#" class="text-gray-600 hover:text-primary font-medium transition-colors">Home</a>
+                    <a href="#how-it-works" class="text-gray-600 hover:text-primary font-medium transition-colors">How It Works</a>
+                    <a href="#why-choose-us" class="text-gray-600 hover:text-primary font-medium transition-colors">Why Choose Us</a>
+                </nav>
+                
+                <!-- Auth section and mobile menu -->
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <div id="authSection" class="flex items-center">
+                        <div id="loginButton" class="hidden">
+                            <a href="login.html" class="btn btn-primary text-xs sm:text-sm px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 whitespace-nowrap">Login</a>
+                        </div>
+                        <div id="userSection" class="hidden flex items-center space-x-1 sm:space-x-2">
+                            <span id="userName" class="text-gray-700 font-medium text-xs sm:text-sm truncate max-w-16 sm:max-w-24 lg:max-w-32"></span>
+                            <button id="logoutButton" class="btn btn-secondary text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">Logout</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Mobile menu button -->
+                    <button class="lg:hidden p-1.5 sm:p-2 text-gray-600 hover:text-primary flex-shrink-0" id="mobileMenuBtn">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobileMenu" class="hidden lg:hidden bg-white border-t border-gray-200">
+            <nav class="container mx-auto px-4 py-4 space-y-2">
+                <a href="#" class="block text-gray-600 hover:text-primary font-medium py-2 transition-colors">Home</a>
+                <a href="#how-it-works" class="block text-gray-600 hover:text-primary font-medium py-2 transition-colors">How It Works</a>
+                <a href="#why-choose-us" class="block text-gray-600 hover:text-primary font-medium py-2 transition-colors">Why Choose Us</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <main>
+        <section class="bg-light-green py-12 sm:py-16 lg:py-20">
+            <div class="container mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                <div class="text-center lg:text-left order-2 lg:order-1">
+                    <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-dark-gray mb-4 leading-tight">Authentic Ayurvedic Transparency</h2>
+                    <p class="text-base sm:text-lg text-medium-gray mb-6 sm:mb-8 max-w-2xl mx-auto lg:mx-0">Trace your Ayurvedic products from farm to shelf with blockchain-powered transparency. Verify authenticity, quality, and sustainability with a simple scan.</p>
+                    
+                    <div class="max-w-lg bg-white p-3 sm:p-4 rounded-lg shadow-md flex flex-col sm:flex-row gap-2 mx-auto lg:mx-0">
+                        <input id="trackIdInput" type="text" placeholder="Enter Batch ID or scan QR code..." class="w-full px-3 sm:px-4 py-2 text-gray-800 rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base">
+                        <button id="trackBtn" class="btn btn-primary flex-shrink-0 w-full sm:w-auto">Trace</button>
+                    </div>
+                    <p class="text-sm text-medium-gray mt-4">🌿 Instantly verify product authenticity</p>
+                </div>
+                <div class="order-1 lg:order-2">
+                    <img src="assets/images/spring-farm.jpg" alt="Lush green farm with fresh crops" class="rounded-xl shadow-2xl w-full h-64 sm:h-80 lg:h-96 object-cover">
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section id="how-it-works" class="py-12 sm:py-16 lg:py-20">
+            <div class="container mx-auto px-4 sm:px-6">
+                <h3 class="section-title text-2xl sm:text-3xl lg:text-4xl text-center">How AyurTrace Works</h3>
+                <p class="section-subtitle text-base sm:text-lg max-w-3xl mx-auto text-center mb-8 sm:mb-12">Our blockchain-powered platform ensures complete transparency in the Ayurvedic supply chain, from cultivation to consumer.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
+                    <div class="card p-4 sm:p-6 text-center">
+                        <div class="flex justify-center mb-4">
+                            <img src="assets/icons/scan-icon.svg" alt="Scan QR Code Icon" class="w-16 h-16 sm:w-20 sm:h-20">
+                        </div>
+                        <h4 class="text-lg sm:text-xl font-semibold mb-3 text-center">1. Scan QR Code</h4>
+                        <p class="text-gray-600 text-sm sm:text-base text-center leading-relaxed">Simply scan the QR code on your Ayurvedic product packaging to begin the traceability journey.</p>
+                    </div>
+                    <div class="card p-4 sm:p-6 text-center">
+                        <div class="flex justify-center mb-4">
+                            <img src="assets/icons/journey-icon.svg" alt="View Journey Icon" class="w-16 h-16 sm:w-20 sm:h-20">
+                        </div>
+                        <h4 class="text-lg sm:text-xl font-semibold mb-3 text-center">2. View Journey</h4>
+                        <p class="text-gray-600 text-sm sm:text-base text-center leading-relaxed">Explore the complete supply chain journey with detailed information about each step and stakeholder.</p>
+                    </div>
+                    <div class="card p-4 sm:p-6 text-center">
+                        <div class="flex justify-center mb-4">
+                            <img src="assets/icons/verify-icon.svg" alt="Verify Authenticity Icon" class="w-16 h-16 sm:w-20 sm:h-20">
+                        </div>
+                        <h4 class="text-lg sm:text-xl font-semibold mb-3 text-center">3. Verify Authenticity</h4>
+                        <p class="text-gray-600 text-sm sm:text-base text-center leading-relaxed">Confirm product authenticity and quality with blockchain-verified information from trusted sources.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Why Choose Us Section -->
+        <section id="why-choose-us" class="py-12 sm:py-16 lg:py-20 bg-light-gray">
+            <div class="container mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                <div class="order-2 lg:order-1">
+                    <h3 class="text-2xl sm:text-3xl font-bold mb-6 text-center lg:text-left">Why Choose AyurTrace?</h3>
+                    <div class="space-y-4 sm:space-y-6">
+                        <div class="flex items-start gap-3 sm:gap-4">
+                            <div class="flex-shrink-0"><img src="assets/icons/tradition-icon.svg" alt="Traditional Wisdom Icon" class="w-8 h-8 sm:w-10 sm:h-10"></div>
+                            <div>
+                                <h4 class="font-semibold text-base sm:text-lg">Traditional Wisdom</h4>
+                                <p class="text-medium-gray text-sm sm:text-base">Preserving the integrity of ancient Ayurvedic practices with modern transparency.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 sm:gap-4">
+                            <div class="flex-shrink-0"><img src="assets/icons/blockchain-icon.svg" alt="Blockchain Security Icon" class="w-8 h-8 sm:w-10 sm:h-10"></div>
+                            <div>
+                                <h4 class="font-semibold text-base sm:text-lg">Blockchain Security</h4>
+                                <p class="text-medium-gray text-sm sm:text-base">Immutable records ensure data integrity and prevent counterfeiting.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 sm:gap-4">
+                            <div class="flex-shrink-0"><img src="assets/icons/instant-icon.svg" alt="Instant Verification Icon" class="w-8 h-8 sm:w-10 sm:h-10"></div>
+                            <div>
+                                <h4 class="font-semibold text-base sm:text-lg">Instant Verification</h4>
+                                <p class="text-medium-gray text-sm sm:text-base">Real-time access to complete product history with a simple scan.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="order-1 lg:order-2">
+                    <img src="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80" alt="Abstract blockchain visualization" class="rounded-xl shadow-2xl w-full h-64 sm:h-80 lg:h-96 object-cover">
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark-gray text-white py-8 sm:py-10">
+        <div class="container mx-auto px-4 sm:px-6 text-center">
+            <p class="text-sm sm:text-base">&copy; 2025 AyurTrace. Bridging tradition with transparency.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+        });
+
+        // Authentication state management
+        async function initAuthState() {
+            const user = await getCurrentUser();
+            const loginButton = document.getElementById('loginButton');
+            const userSection = document.getElementById('userSection');
+            const userName = document.getElementById('userName');
+            if (user) {
+                loginButton.classList.add('hidden');
+                userSection.classList.remove('hidden');
+                userName.textContent = `Welcome, ${user.name}`;
+            } else {
+                loginButton.classList.remove('hidden');
+                userSection.classList.add('hidden');
+            }
+            const logoutBtn = document.getElementById('logoutButton');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => { await signOut(); });
+            }
+        }
+
+        // Track functionality
+        document.getElementById('trackBtn').addEventListener('click', () => {
+            const trackId = document.getElementById('trackIdInput').value.trim();
+            if (trackId) {
+                window.location.href = `search.html#${encodeURIComponent(trackId)}`;
+            } else {
+                alert('Please enter a Batch ID to track.');
+            }
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initAuthState();
+        });
+    </script>
+
+</body>
+</html>

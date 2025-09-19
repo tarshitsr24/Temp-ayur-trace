@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collector Dashboard - AyurTrace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-green: #27856a;
+            --primary-green-dark: #1f6b55;
+            --primary-green-light: #e9f3f1;
+            --status-bg: #e6f6e6;
+            --status-text: #3c9d3c;
+            --background-color: #f7f9fc;
+            --card-background: #ffffff;
+            --text-primary: #121f3e;
+            --text-secondary: #5a647e;
+            --border-color: #e5e7eb;
+            --error-red: #e53e3e;
+            --font-family: 'Inter', sans-serif;
+        }
+
+        /* --- Base & Typography --- */
+        body {
+            font-family: var(--font-family);
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* --- Header --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background-color: var(--card-background);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        header .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--primary-green);
+        }
+
+        header nav a {
+            text-decoration: none;
+            color: var(--text-secondary);
+            margin-left: 1.5rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+            padding: 0.5rem;
+            border-bottom: 2px solid transparent;
+        }
+
+        header nav a:hover {
+            color: var(--primary-green);
+        }
+
+        header nav a.active {
+            color: var(--primary-green);
+            font-weight: 600;
+            border-bottom: 2px solid var(--primary-green);
+        }
+
+
+        /* --- Dashboard Layout & Cards --- */
+        .dashboard-header {
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-header h2 {
+            font-size: 2.25rem;
+            margin-bottom: 0.25rem;
+            font-weight: 700;
+        }
+
+        .dashboard-header p {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            margin-top: 0;
+        }
+
+        .dashboard-content {
+            display: grid;
+            grid-template-columns: 1fr 1.75fr;
+            gap: 2rem;
+        }
+
+        .card {
+            background-color: var(--card-background);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+        }
+
+        .card-header {
+            margin-top: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--primary-green);
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        /* --- Form Elements --- */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .input-group {
+            display: flex;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"] {
+            width: 100%;
+            padding: 0.875rem 1.25rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            color: var(--text-primary);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        input::placeholder {
+            color: #9ca3af;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 3px var(--primary-green-light);
+        }
+
+        input:disabled {
+            background-color: #f3f4f6;
+            cursor: not-allowed;
+            color: #6b7280;
+        }
+
+        .input-group input {
+            border-radius: 8px 0 0 8px;
+            border-right: none;
+        }
+
+        #fetch-details-btn {
+            border: 1px solid var(--primary-green);
+            background-color: var(--primary-green);
+            color: white;
+            padding: 0 1.5rem;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+        }
+
+        #fetch-details-btn:hover {
+            background-color: var(--primary-green-dark);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.875rem;
+            border: none;
+            background-color: var(--primary-green);
+            color: white;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--primary-green-dark);
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            background-color: #a5d6b9;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            color: var(--error-red);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            height: 1.2em;
+        }
+
+        /* --- Table Styles --- */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        th {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background-color: #f7f9fc;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            background-color: var(--status-bg);
+            color: var(--status-text);
+        }
+
+        .placeholder td {
+            text-align: center;
+            color: #999;
+            padding: 3rem 0;
+        }
+
+
+        /* --- Animation --- */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .row-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+
+        /* --- Responsive --- */
+        @media (max-width: 1024px) {
+            .dashboard-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo">
+            <h1>AyurTrace</h1>
+        </div>
+        <nav>
+            <a href="#" class="active">Dashboard</a>
+            <a href="#">Logout</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <div class="dashboard-header">
+            <h2>Collector Dashboard</h2>
+            <p>Manage batch collections and forward them for auditing.</p>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="card" id="collection-card">
+                <h3 class="card-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Collect New Batch
+                </h3>
+                <form id="collect-form">
+                    <div class="form-group">
+                        <label for="batch-id">Scan/Enter Farmer Batch ID</label>
+                        <div class="input-group">
+                            <input type="text" id="batch-id" placeholder="e.g., FR123-20250908" required>
+                            <button type="button" id="fetch-details-btn">Fetch</button>
+                        </div>
+                        <p id="batch-error" class="error-message"></p>
+                    </div>
+
+                    <div class="batch-details">
+                        <div class="form-group">
+                            <label>Crop</label>
+                            <input type="text" id="crop-details" placeholder="-" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Farmer</label>
+                            <input type="text" id="farmer-details" placeholder="-" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label for="collection-date">Collection Date</label>
+                            <input type="date" id="collection-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="quantity">Confirm Received Quantity (kg)</label>
+                            <input type="number" id="quantity" min="0" step="0.1" placeholder="e.g., 100" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submit-collection-btn" disabled>Confirm & Forward to
+                        Auditor</button>
+                </form>
+            </div>
+
+            <div class="card" id="history-card">
+                <h3 class="card-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-6l-2 3h-4l-2-3H2"></path>
+                        <path
+                            d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z">
+                        </path>
+                    </svg>
+                    Collected Batches
+                </h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Batch ID</th>
+                                <th>Crop</th>
+                                <th>Farmer</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="collected-batches-table">
+                            <tr class="placeholder">
+                                <td colspan="5">No batches collected yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const availableBatches = {
+                'FR123-20250908': { crop: 'Rice, 100kg', farmer: 'Ramesh (FR123)' },
+                'FR456-20250910': { crop: 'Ashwagandha, 250kg', farmer: 'Priya (FR456)' },
+                'FR789-20250911': { crop: 'Turmeric, 150kg', farmer: 'Suresh (FR789)' }
+            };
+
+            const form = document.getElementById('collect-form');
+            const fetchBtn = document.getElementById('fetch-details-btn');
+            const batchIdInput = document.getElementById('batch-id');
+            const cropDetailsInput = document.getElementById('crop-details');
+            const farmerDetailsInput = document.getElementById('farmer-details');
+            const collectionDateInput = document.getElementById('collection-date');
+            const quantityInput = document.getElementById('quantity'); // <-- ADDED THIS VARIABLE
+            const submitBtn = document.getElementById('submit-collection-btn');
+            const batchError = document.getElementById('batch-error');
+            const tableBody = document.getElementById('collected-batches-table');
+
+            fetchBtn.addEventListener('click', fetchBatchDetails);
+            batchIdInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    fetchBatchDetails();
+                }
+            });
+            form.addEventListener('submit', handleFormSubmit);
+
+            // --- THIS IS THE NEW FIX ---
+            // Prevents manually typing negative numbers in the quantity field
+            quantityInput.addEventListener('input', () => {
+                if (quantityInput.value < 0) {
+                    quantityInput.value = ''; // Reset to empty if a negative value is entered
+                }
+            });
+            // --- END OF FIX ---
+
+            function fetchBatchDetails() {
+                const batchId = batchIdInput.value.trim();
+                clearBatchDetails();
+                if (availableBatches[batchId]) {
+                    const batch = availableBatches[batchId];
+                    cropDetailsInput.value = batch.crop;
+                    farmerDetailsInput.value = batch.farmer;
+                    batchError.textContent = '';
+                    submitBtn.disabled = false;
+                    collectionDateInput.value = new Date().toISOString().split('T')[0];
+                } else if (batchId === '') {
+                    batchError.textContent = 'Please enter a Batch ID.';
+                } else {
+                    batchError.textContent = 'Batch ID not found.';
+                }
+            }
+
+            function handleFormSubmit(event) {
+                event.preventDefault();
+                const batchData = {
+                    batchId: batchIdInput.value.trim(),
+                    crop: cropDetailsInput.value,
+                    farmer: farmerDetailsInput.value,
+                    collectionDate: new Date(collectionDateInput.value).toLocaleDateString('en-GB'),
+                    status: 'Sent to Auditor'
+                };
+                addBatchToTable(batchData);
+                delete availableBatches[batchData.batchId];
+                resetForm();
+            }
+
+            function addBatchToTable(data) {
+                const placeholder = tableBody.querySelector('.placeholder');
+                if (placeholder) {
+                    placeholder.remove();
+                }
+                const newRow = document.createElement('tr');
+                newRow.classList.add('row-fade-in');
+                newRow.innerHTML = `
+                    <td>${data.batchId}</td>
+                    <td>${data.crop.split(',')[0]}</td>
+                    <td>${data.farmer}</td>
+                    <td>${data.collectionDate}</td>
+                    <td><span class="status">${data.status}</span></td>
+                `;
+                tableBody.prepend(newRow);
+            }
+
+            function clearBatchDetails() {
+                cropDetailsInput.value = '';
+                farmerDetailsInput.value = '';
+                submitBtn.disabled = true;
+            }
+
+            function resetForm() {
+                form.reset();
+                clearBatchDetails();
+                batchError.textContent = '';
+            }
+        });
+    </script>
+</body>
+
+</html>

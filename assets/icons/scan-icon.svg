@@ -1,0 +1,55 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="leafGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="qrGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="40" cy="40" r="38" fill="#F0FDF4" stroke="url(#leafGradient1)" stroke-width="2"/>
+  
+  <!-- Leaf elements around QR code -->
+  <g transform="translate(40, 40)">
+    <!-- Top leaf -->
+    <path d="M0 -20 C-6 -26, 6 -26, 0 -20 C-4 -16, 4 -16, 0 -20 Z" fill="url(#leafGradient1)"/>
+    
+    <!-- Right leaf -->
+    <path d="M20 0 C26 -6, 26 6, 20 0 C16 -4, 16 4, 20 0 Z" fill="url(#leafGradient1)"/>
+    
+    <!-- Bottom leaf -->
+    <path d="M0 20 C6 26, -6 26, 0 20 C4 16, -4 16, 0 20 Z" fill="url(#leafGradient1)"/>
+    
+    <!-- Left leaf -->
+    <path d="M-20 0 C-26 6, -26 -6, -20 0 C-16 4, -16 -4, -20 0 Z" fill="url(#leafGradient1)"/>
+    
+    <!-- QR code pattern in center -->
+    <g transform="translate(-12, -12)">
+      <!-- QR squares -->
+      <rect x="0" y="0" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      <rect x="6" y="0" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      <rect x="12" y="0" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      <rect x="18" y="0" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      
+      <rect x="0" y="6" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      <rect x="18" y="6" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      
+      <rect x="0" y="12" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      <rect x="6" y="12" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      <rect x="12" y="12" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      <rect x="18" y="12" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      
+      <rect x="0" y="18" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      <rect x="18" y="18" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      
+      <rect x="0" y="20" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      <rect x="6" y="20" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      <rect x="12" y="20" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+      <rect x="18" y="20" width="4" height="4" fill="url(#qrGradient1)" rx="1"/>
+    </g>
+  </g>
+</svg>

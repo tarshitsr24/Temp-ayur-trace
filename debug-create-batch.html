@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Batch Button Test</title>
+    <link rel="stylesheet" href="theme.css">
+    <style>
+        body { padding: 20px; font-family: Arial, sans-serif; }
+        .debug-info { background: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 8px; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Create Batch Button Debug Test</h1>
+    
+    <div class="debug-info">
+        <h3>Test Environment</h3>
+        <div id="testResults"></div>
+    </div>
+
+    <!-- Copy the exact button and form structure from farmer.html -->
+    <div style="margin-bottom: 2rem;">
+        <button class="create-batch-btn" id="showCreateBatchFormBtn">
+            <i class="fas fa-plus"></i>
+            Create New Batch
+        </button>
+    </div>
+
+    <section class="card" id="createBatchSection" style="display: none;">
+        <h3 class="card-header">
+            <i class="fas fa-plus-circle"></i>
+            Create New Batch
+        </h3>
+        <form id="newBatchForm">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="cropName">Crop Name</label>
+                    <input type="text" id="cropName" name="cropName" class="form-input" placeholder="e.g., Rice, Wheat" required>
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Quantity (kg)</label>
+                    <input type="number" id="quantity" name="quantity" class="form-input" placeholder="100" min="1" required>
+                </div>
+            </div>
+            <button type="button" onclick="testForm()">Test Form Submit</button>
+        </form>
+    </section>
+
+    <script>
+        console.log('🚀 Debug script starting...');
+        
+        // Test results container
+        const results = document.getElementById('testResults');
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // Test 1: Check if elements exist
+        addResult('🔍 <strong>Test 1:</strong> Checking if elements exist...', 'info');
+        
+        const showFormBtn = document.getElementById('showCreateBatchFormBtn');
+        const createBatchSection = document.getElementById('createBatchSection');
+        
+        if (showFormBtn) {
+            addResult('✅ showCreateBatchFormBtn element found', 'success');
+        } else {
+            addResult('❌ showCreateBatchFormBtn element NOT found', 'error');
+        }
+        
+        if (createBatchSection) {
+            addResult('✅ createBatchSection element found', 'success');
+        } else {
+            addResult('❌ createBatchSection element NOT found', 'error');
+        }
+
+        // Test 2: Check if CSS is loaded
+        addResult('🎨 <strong>Test 2:</strong> Checking CSS styles...', 'info');
+        
+        if (showFormBtn) {
+            const styles = window.getComputedStyle(showFormBtn);
+            const bgColor = styles.backgroundColor;
+            const display = styles.display;
+            
+            addResult(`Button background: ${bgColor}`, 'info');
+            addResult(`Button display: ${display}`, 'info');
+            
+            if (bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+                addResult('✅ Button has background styling', 'success');
+            } else {
+                addResult('⚠️ Button may not have proper CSS styling', 'warning');
+            }
+        }
+
+        // Test 3: Add event listener and test functionality
+        addResult('⚡ <strong>Test 3:</strong> Testing button functionality...', 'info');
+        
+        if (showFormBtn && createBatchSection) {
+            // Remove any existing listeners first
+            const newBtn = showFormBtn.cloneNode(true);
+            showFormBtn.parentNode.replaceChild(newBtn, showFormBtn);
+            
+            let clickCount = 0;
+            newBtn.addEventListener('click', function() {
+                clickCount++;
+                addResult(`🖱️ Button clicked ${clickCount} time(s)`, 'info');
+                
+                const currentDisplay = createBatchSection.style.display;
+                addResult(`Current section display: "${currentDisplay}"`, 'info');
+                
+                if (currentDisplay === 'none' || currentDisplay === '') {
+                    createBatchSection.style.display = 'block';
+                    addResult('✅ Form section shown', 'success');
+                } else {
+                    createBatchSection.style.display = 'none';
+                    addResult('📴 Form section hidden', 'warning');
+                }
+            });
+            
+            addResult('✅ Event listener attached successfully', 'success');
+        } else {
+            addResult('❌ Cannot attach event listener - elements missing', 'error');
+        }
+
+        // Test 4: Check for JavaScript errors
+        addResult('🐛 <strong>Test 4:</strong> Monitoring for JavaScript errors...', 'info');
+        
+        window.addEventListener('error', function(e) {
+            addResult(`❌ JavaScript Error: ${e.message} at ${e.filename}:${e.lineno}`, 'error');
+        });
+
+        function testForm() {
+            addResult('📝 Form test button clicked', 'info');
+            const formData = new FormData(document.getElementById('newBatchForm'));
+            addResult(`Crop: ${formData.get('cropName')}, Quantity: ${formData.get('quantity')}`, 'success');
+        }
+
+        // Test 5: DOM Ready state
+        addResult(`📄 DOM Ready State: ${document.readyState}`, 'info');
+        
+        if (document.readyState === 'complete') {
+            addResult('✅ Document fully loaded', 'success');
+        } else {
+            addResult('⚠️ Document still loading...', 'warning');
+        }
+
+        addResult('🏁 <strong>Debug tests completed!</strong> Try clicking the "Create New Batch" button above.', 'success');
+    </script>
+</body>
+</html>

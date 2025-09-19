@@ -1,0 +1,44 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="blockchainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Blockchain represented as connected leaf nodes -->
+  <g transform="translate(20, 20)">
+    <!-- Chain connections -->
+    <path d="M-12 -8 L-4 0 L4 0 L12 -8" stroke="url(#blockchainGradient)" stroke-width="2" fill="none"/>
+    <path d="M-12 8 L-4 0 L4 0 L12 8" stroke="url(#blockchainGradient)" stroke-width="2" fill="none"/>
+    
+    <!-- Left leaf block -->
+    <g transform="translate(-12, -8) scale(0.6)">
+      <path d="M0 -6 C-3 -9, 3 -9, 0 -6 C-2 -4, 2 -4, 0 -6 Z" fill="url(#blockchainGradient)"/>
+      <rect x="-1" y="-4" width="2" height="6" fill="url(#blockchainGradient)" rx="1"/>
+    </g>
+    
+    <!-- Center leaf block -->
+    <g transform="translate(0, 0) scale(0.8)">
+      <path d="M0 -6 C-3 -9, 3 -9, 0 -6 C-2 -4, 2 -4, 0 -6 Z" fill="url(#blockchainGradient)"/>
+      <rect x="-1" y="-4" width="2" height="6" fill="url(#blockchainGradient)" rx="1"/>
+      <!-- Security lock symbol -->
+      <rect x="-2" y="0" width="4" height="3" fill="#059669" rx="1"/>
+      <path d="M-1 0 L-1 -1 C-1 -2, 1 -2, 1 -1 L1 0" stroke="#059669" stroke-width="1" fill="none"/>
+    </g>
+    
+    <!-- Right leaf block -->
+    <g transform="translate(12, -8) scale(0.6)">
+      <path d="M0 -6 C-3 -9, 3 -9, 0 -6 C-2 -4, 2 -4, 0 -6 Z" fill="url(#blockchainGradient)"/>
+      <rect x="-1" y="-4" width="2" height="6" fill="url(#blockchainGradient)" rx="1"/>
+    </g>
+    
+    <!-- Bottom leaf blocks -->
+    <g transform="translate(-12, 8) scale(0.4)">
+      <path d="M0 -6 C-3 -9, 3 -9, 0 -6 C-2 -4, 2 -4, 0 -6 Z" fill="url(#blockchainGradient)"/>
+    </g>
+    <g transform="translate(12, 8) scale(0.4)">
+      <path d="M0 -6 C-3 -9, 3 -9, 0 -6 C-2 -4, 2 -4, 0 -6 Z" fill="url(#blockchainGradient)"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,46 @@
+<svg width="140" height="40" viewBox="0 0 140 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="qrGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Main leaf/plant element -->
+  <g transform="translate(2, 4)">
+    <!-- Stem -->
+    <rect x="15" y="20" width="2" height="12" fill="url(#leafGradient)" rx="1"/>
+    
+    <!-- Left leaf -->
+    <path d="M8 18 C8 18, 12 14, 16 16 C14 20, 10 22, 8 18 Z" fill="url(#leafGradient)"/>
+    
+    <!-- Right leaf -->
+    <path d="M24 18 C24 18, 20 14, 16 16 C18 20, 22 22, 24 18 Z" fill="url(#leafGradient)"/>
+    
+    <!-- Center leaf -->
+    <path d="M16 8 C16 8, 12 12, 16 16 C20 12, 16 8, 16 8 Z" fill="url(#leafGradient)"/>
+    
+    <!-- Small QR code pattern overlay -->
+    <g transform="translate(11, 22)" opacity="0.6">
+      <rect x="0" y="0" width="2" height="2" fill="url(#qrGradient)"/>
+      <rect x="3" y="0" width="2" height="2" fill="url(#qrGradient)"/>
+      <rect x="6" y="0" width="2" height="2" fill="url(#qrGradient)"/>
+      <rect x="0" y="3" width="2" height="2" fill="url(#qrGradient)"/>
+      <rect x="6" y="3" width="2" height="2" fill="url(#qrGradient)"/>
+      <rect x="0" y="6" width="2" height="2" fill="url(#qrGradient)"/>
+      <rect x="3" y="6" width="2" height="2" fill="url(#qrGradient)"/>
+      <rect x="6" y="6" width="2" height="2" fill="url(#qrGradient)"/>
+    </g>
+  </g>
+  
+  <!-- Text -->
+  <g transform="translate(38, 8)">
+    <text x="0" y="12" font-family="Inter, sans-serif" font-size="16" font-weight="700" fill="#10B981">Ayur</text>
+    <text x="40" y="12" font-family="Inter, sans-serif" font-size="16" font-weight="400" fill="#059669">Trace</text>
+    <text x="0" y="26" font-family="Inter, sans-serif" font-size="8" font-weight="400" fill="#6B7280" letter-spacing="2px">SUPPLY CHAIN</text>
+  </g>
+</svg>
